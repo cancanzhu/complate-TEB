@@ -143,7 +143,7 @@ inline double penaltyBoundFromBelow(const double& var, const double& a,const dou
     }
     else
     {
-      return (future - obs_distance) + a + epsilon;
+      return (future - obs_distance) + a + epsilon;//这里有问题，不应该是a + epsilon，应该与机器人当前位置和行人当前位置和未来位置有关系
     }
   }
   else

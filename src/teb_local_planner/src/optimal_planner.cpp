@@ -218,6 +218,8 @@ bool TebOptimalPlanner::optimizeTEB(int iterations_innerloop, int iterations_out
   double shrink_ratio = 0.0;
   double height = 0.0;
   int judge_lag = 0;//判断轨迹在行人前面还是后面的标志变量
+  shrink_ratio_lag = 0;
+  lag_optimal = 0;
   // ROS_INFO("新的轨迹");
 
   //根据行人速度调整迭代次数
@@ -271,6 +273,8 @@ bool TebOptimalPlanner::optimizeTEB(int iterations_innerloop, int iterations_out
       shrink_ratio = (double)i/vel_iterations_outerloop;
       // shrink_ratio =pow((((double)i)/vel_iterations_outerloop),0.5);
       // shrink_ratio =4*atan((double)i/vel_iterations_outerloop)/M_PI;
+      // shrink_ratio = 1;
+      // vel_iterations_outerloop = 4;
      }
     if (no_optimize == 1)
      {
@@ -360,6 +364,8 @@ bool TebOptimalPlanner::optimizeTEB(int iterations_innerloop, int iterations_out
     if (compute_cost_afterwards && i == vel_iterations_outerloop - 1) // compute cost vec only in the last iteration
     {
       computeCurrentCost(obst_cost_scale, viapoint_cost_scale, alternative_time_cost, shrink_ratio);
+      shrink_ratio_lag = 0;
+      lag_optimal = 0;
       // ROS_INFO("啦啦啦");
     }
 
@@ -882,6 +888,65 @@ int TebOptimalPlanner::AddEdgesDynamicObstacles(double weight_multiplier,double 
     // {
     //   shrink_ratio = 1;
     // }
+    /*
+  找到距离障碍物最近TEB点，判断轨迹是在行人前还是行人后面
+  如果控制点比较稀疏,咋办
+  如何精准判断轨迹是在行人前面还是后面
+  例如平行着走的时候
+  能不能判断个数，就是在与行人交角为锐角的控制点的个数
+  先判断行人速度是否为0
+  要在shrink_ratio不为0的时候，先优化一轮
+*/
+    if (((*obst)->getCentroidVelocity()).norm() == 0)
+    {
+      lag_optimal = 0;
+    }
+    else
+    {
+      if (shrink_ratio == 0)
+      {
+        lag_optimal = 0;
+      }
+      else
+      {
+        if (shrink_ratio_lag == 0)
+        {
+          double time_lab = teb_.TimeDiff(0);
+          double min_lab = 1000;
+          Eigen::Vector2d normal_vector;
+          Eigen::Vector2d teb_min;
+          Eigen::Vector2d obs_now;
+          Eigen::Vector2d judge_ctrl_point;
+          for (int i = 1; i < teb_.sizePoses() - 1; ++i)
+          {
+            double dist = robot_model_.get()->estimateSpatioTemporalDistance(teb_.PoseVertex(i)->pose(), obst->get(), time_lab, shrink_ratio);
+            time_lab += teb_.TimeDiff(i);
+            if (min_lab >= dist) // 寻找距离障碍物未来位置最近点
+            {
+              min_lab = dist;
+              teb_min.x() = teb_.Pose(i).x();
+              teb_min.y() = teb_.Pose(i).y();
+              normal_vector = robot_model_.get()->estimateNormalVector(teb_.PoseVertex(i)->pose(), obst->get(), time_lab, shrink_ratio);
+              (*obst)->predictEveryCentroidConstantVelocity(time_lab, obs_now, shrink_ratio);
+              judge_ctrl_point = teb_min - obs_now;
+            }
+          }
+          // 判断点积，如果大于0，则轨迹在前面，此时lag_optimal为1，全部向外推
+          if (normal_vector.dot(judge_ctrl_point) > 0)
+          {
+            lag_optimal = 1;
+            ROS_INFO("YES");
+          }
+          else
+          {
+            lag_optimal = 0;
+            ROS_INFO("NO");
+          }
+          shrink_ratio_lag = 1;
+        }
+      }
+    }
+
     double time = teb_.TimeDiff(0);
     // ros::Duration(0.0001).sleep();
     for (int i=1; i < teb_.sizePoses() - 1; ++i)
@@ -905,7 +970,7 @@ int TebOptimalPlanner::AddEdgesDynamicObstacles(double weight_multiplier,double 
       pedestrain_poses.poses.push_back(pedestrain_pose.pose);
       pedestrain_poses_pub_.publish(pedestrain_poses);
 
-      EdgeDynamicObstacle* dynobst_edge = new EdgeDynamicObstacle(time,shrink_ratio);
+      EdgeDynamicObstacle* dynobst_edge = new EdgeDynamicObstacle(time,shrink_ratio,lag_optimal);
       dynobst_edge->setCostmap(costmap2d_);
       dynobst_edge->setObsMapLabeled(obs_map_labeled_);
       dynobst_edge->setVertex(0,teb_.PoseVertex(i));

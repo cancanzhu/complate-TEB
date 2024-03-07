@@ -715,6 +715,8 @@ protected:
   std::list<double > teb_y;
   int no_optimize;
   ros::NodeHandle nh_shrink;
+  int shrink_ratio_lag;//用于判断几次的标志变量
+  int lag_optimal;//判断轨迹在前面还是后面的标志变量
 
   // ros::Publisher local_plan_pub_;
   // ros::Publisher teb_poses_pub_;

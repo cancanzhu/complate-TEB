@@ -83,7 +83,7 @@ public:
    * @brief Construct edge and specify the time for its associated pose (neccessary for computeError).
    * @param t_ Estimated time until current pose is reached
    */      
-  EdgeDynamicObstacle(double t,double shrink_ratio) : t_(t),shrink_ratio_(shrink_ratio)
+  EdgeDynamicObstacle(double t,double shrink_ratio,int lag_optimal) : t_(t),shrink_ratio_(shrink_ratio),lag_optimal_(lag_optimal)
   {
   }
   
@@ -100,26 +100,41 @@ public:
     normalvectorOA = robot_model_->estimateNormalVector(bandpt->pose(), _measurement, t_,shrink_ratio_);//求向外推的法向量
     double future_distance = robot_model_->estimateSpatioTemporalDistance(bandpt->pose(), _measurement, t_,2);//未来的位置*2
     double obstacle_distance = robot_model_->estimateObstacleFutureDistance(bandpt->pose(), _measurement, t_,shrink_ratio_);
-    //得到障碍物前面一系列点
-    if (shrink_ratio_ == 0)
+
+    if (lag_optimal_ == 0)
     {
       lag = 0;
+      // ROS_INFO("777");
     }
     else
     {
-      if (dist < 0)
-      {
-        information_obs_pose = bandpt->pose().position() + normalvectorOA * future_distance;
-        future_distance = robot_model_->estimateSpatioTemporalDistance(bandpt->pose(), _measurement, t_, 2, information_obs_pose);
-        obstacle_distance = robot_model_->estimateObstacleFutureDistance(bandpt->pose(), _measurement, t_, shrink_ratio_, information_obs_pose);
-        lag = 1;
-        ROS_INFO("666");
-      }
-      else
-      {
-        lag = 0;
-      }
+      information_obs_pose = bandpt->pose().position() + normalvectorOA * future_distance;
+      future_distance = robot_model_->estimateSpatioTemporalDistance(bandpt->pose(), _measurement, t_, 2, information_obs_pose);
+      obstacle_distance = robot_model_->estimateObstacleFutureDistance(bandpt->pose(), _measurement, t_, shrink_ratio_, information_obs_pose);
+      lag = 1;
+      // ROS_INFO("666");
     }
+
+    // //得到障碍物前面一系列点
+    // if (shrink_ratio_ == 0)
+    // {
+    //   lag = 0;
+    // }
+    // else
+    // {
+    //   if (dist < 0)
+    //   {
+    //     information_obs_pose = bandpt->pose().position() + normalvectorOA * future_distance;
+    //     future_distance = robot_model_->estimateSpatioTemporalDistance(bandpt->pose(), _measurement, t_, 2, information_obs_pose);
+    //     obstacle_distance = robot_model_->estimateObstacleFutureDistance(bandpt->pose(), _measurement, t_, shrink_ratio_, information_obs_pose);
+    //     lag = 1;
+    //     ROS_INFO("666");
+    //   }
+    //   else
+    //   {
+    //     lag = 0;
+    //   }
+    // }
     
     // ROS_INFO("距离为:%f",information_obs_pose.x());
 
@@ -196,6 +211,7 @@ protected:
   const BaseRobotFootprintModel* robot_model_; //!< Store pointer to robot_model
   double t_; //!< Estimated time until current pose is reached
   double shrink_ratio_;
+  int lag_optimal_;
   costmap_2d::Costmap2D* costmap2d_;
   std::vector<std::vector<int>> obs_map_labeled_;
   Eigen::Vector2d normalvectorOA;//用于生成障碍物前面一系列点的单位向量
