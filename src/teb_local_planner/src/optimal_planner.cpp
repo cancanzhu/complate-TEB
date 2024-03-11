@@ -246,7 +246,7 @@ bool TebOptimalPlanner::optimizeTEB(int iterations_innerloop, int iterations_out
     //感觉还是跟判断条件有关，当dist小于0.5时，都能优化到行人前面，而且没有往回优化的轨迹
     vel_iterations_outerloop = int(iterations_outerloop*max_centroid_velocity_*15);//跟innerloop也有关系，不应该是线性的，应该是指数性的,因为随着优化的进行，路经点之间的时间间隔会越来越大，行人速度较快时，未来位置会更远
   }
-  ROS_INFO("迭代次数为:%d",vel_iterations_outerloop);
+  // ROS_INFO("迭代次数为:%d",vel_iterations_outerloop);
   for(int i=0; i< vel_iterations_outerloop; i+=1)//j)
   {
     // for (int j = 0; j < iterations_outerloop; j++)
@@ -919,8 +919,9 @@ int TebOptimalPlanner::AddEdgesDynamicObstacles(double weight_multiplier,double 
           Eigen::Vector2d judge_ctrl_point;
           for (int i = 1; i < teb_.sizePoses() - 1; ++i)
           {
+            // 根据最近控制点判断轨迹前后
             double dist = robot_model_.get()->estimateSpatioTemporalDistance(teb_.PoseVertex(i)->pose(), obst->get(), time_lab, shrink_ratio);
-            time_lab += teb_.TimeDiff(i);
+            // time_lab += teb_.TimeDiff(i);
             if (min_lab >= dist) // 寻找距离障碍物未来位置最近点
             {
               min_lab = dist;
@@ -930,17 +931,21 @@ int TebOptimalPlanner::AddEdgesDynamicObstacles(double weight_multiplier,double 
               (*obst)->predictEveryCentroidConstantVelocity(time_lab, obs_now, shrink_ratio);
               judge_ctrl_point = teb_min - obs_now;
             }
+            // 根据锐角控制点的个数判断轨迹前后 不合理
+            // normal_vector = robot_model_.get()->estimateNormalVector(teb_.PoseVertex(i)->pose(), obst->get(), time_lab, shrink_ratio);
+            // (*obst)->predictEveryCentroidConstantVelocity(time_lab, obs_now, shrink_ratio);
+            // judge_ctrl_point = teb_min - obs_now;
           }
           // 判断点积，如果大于0，则轨迹在前面，此时lag_optimal为1，全部向外推
           if (normal_vector.dot(judge_ctrl_point) > 0)
           {
             lag_optimal = 1;
-            ROS_INFO("YES");
+            // ROS_INFO("YES");
           }
           else
           {
             lag_optimal = 0;
-            ROS_INFO("NO");
+            // ROS_INFO("NO");
           }
           shrink_ratio_lag = 1;
         }

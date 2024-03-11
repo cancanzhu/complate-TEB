@@ -175,6 +175,7 @@ public:
   }
   virtual double estimateSpatioTemporalDistance(const PoseSE2& current_pose, const Obstacle* obstacle, double t,double shrink_ratio,const Eigen::Vector2d& obs_pose) const
   {
+    //  ROS_INFO("666");
     return obstacle->getMinimumSpatioTemporalDistance(current_pose.position(), t,shrink_ratio,obs_pose);
   } 
   virtual double estimateObstacleFutureDistance(const PoseSE2& current_pose, const Obstacle* obstacle, double t,double shrink_ratio) const

@@ -168,6 +168,7 @@ public:
   //获得障碍物当前位置和未来位置的距离
   virtual double getObstacleFutureDistance(const Eigen::Vector2d& position, double t,double shrink_ratio) const = 0;
   virtual double getObstacleFutureDistance(const Eigen::Vector2d& position, double t,double shrink_ratio, const Eigen::Vector2d& obs_pose) const = 0;
+  virtual Eigen::Vector2d getObstacleFutureDistanceVector2d(const Eigen::Vector2d& position, double t,double shrink_ratio, const Eigen::Vector2d& obs_pose) const = 0;
   virtual Eigen::Vector2d getNormalVector(const Eigen::Vector2d& position, double t,double shrink_ratio) const = 0;
 
   // virtual bool getJudgeTheta() const = 0;
@@ -414,6 +415,10 @@ public:
   {
     return ( obs_pose - (pos_ + t*centroid_velocity_*shrink_ratio)).norm();
   }
+  virtual Eigen::Vector2d getObstacleFutureDistanceVector2d(const Eigen::Vector2d& position, double t,double shrink_ratio, const Eigen::Vector2d& obs_pose) const
+  {
+    return  (obs_pose - (pos_ + t*centroid_velocity_*shrink_ratio));
+  }
   virtual Eigen::Vector2d getNormalVector(const Eigen::Vector2d& position, double t,double shrink_ratio) const
   {
     return ( t*centroid_velocity_*(2-shrink_ratio)).normalized();
@@ -597,7 +602,8 @@ public:
   }
   virtual double getMinimumSpatioTemporalDistance(const Eigen::Vector2d& position, double t,double shrink_ratio,const Eigen::Vector2d& obs_pose) const
   {
-    return (obs_pose- position).norm() - radius_;
+    // ROS_INFO("radius is %f",radius_);
+    return (obs_pose- position).norm()- radius_;
   }
   virtual double getObstacleFutureDistance(const Eigen::Vector2d& position, double t,double shrink_ratio) const
   {
@@ -606,6 +612,10 @@ public:
   virtual double getObstacleFutureDistance(const Eigen::Vector2d& position, double t,double shrink_ratio, const Eigen::Vector2d& obs_pose) const
   {
     return ( obs_pose - (pos_ + t*centroid_velocity_*shrink_ratio)).norm();
+  }
+  virtual Eigen::Vector2d getObstacleFutureDistanceVector2d(const Eigen::Vector2d& position, double t,double shrink_ratio, const Eigen::Vector2d& obs_pose) const
+  {
+    return  (obs_pose - (pos_ + t*centroid_velocity_*shrink_ratio));
   }
   virtual Eigen::Vector2d getNormalVector(const Eigen::Vector2d& position, double t,double shrink_ratio) const
   {
@@ -795,6 +805,10 @@ public:
     Eigen::Vector2d offset = t*centroid_velocity_*shrink_ratio;
     return distance_point_to_segment_2d(obs_pose, start_ + offset, end_ + offset);
   }
+  virtual Eigen::Vector2d getObstacleFutureDistanceVector2d(const Eigen::Vector2d& position, double t,double shrink_ratio, const Eigen::Vector2d& obs_pose) const
+  {
+    
+  }
   virtual Eigen::Vector2d getNormalVector(const Eigen::Vector2d& position, double t,double shrink_ratio) const
   {
     return ( t*centroid_velocity_*(2-shrink_ratio)).normalized();
@@ -967,6 +981,10 @@ public:
   {
     Eigen::Vector2d offset = t*centroid_velocity_*shrink_ratio;
     return distance_point_to_segment_2d(obs_pose, start_ + offset, end_ + offset) - radius_;
+  }
+  virtual Eigen::Vector2d getObstacleFutureDistanceVector2d(const Eigen::Vector2d& position, double t,double shrink_ratio, const Eigen::Vector2d& obs_pose) const
+  {
+    
   }
   virtual Eigen::Vector2d getNormalVector(const Eigen::Vector2d& position, double t,double shrink_ratio) const
   {
@@ -1159,6 +1177,10 @@ public:
     Point2dContainer pred_vertices;
     predictVertices(t, pred_vertices,shrink_ratio);
     return distance_point_to_polygon_2d(obs_pose, pred_vertices);
+  }
+  virtual Eigen::Vector2d getObstacleFutureDistanceVector2d(const Eigen::Vector2d& position, double t,double shrink_ratio, const Eigen::Vector2d& obs_pose) const
+  {
+    
   }
   virtual Eigen::Vector2d getNormalVector(const Eigen::Vector2d& position, double t,double shrink_ratio) const
   {

@@ -131,7 +131,7 @@ inline double penaltyBoundFromBelow(const double& var, const double& a,const dou
   }
 }
 
-inline double penaltyBoundFromBelow(const double& var, const double& a,const double& epsilon,const double& future,const double& obs_distance,const int& lag,const teb_local_planner::PoseSE2& pos, costmap_2d::Costmap2D* costmap2d, const std::vector<std::vector<int>>& obs_map_labeled)
+inline double penaltyBoundFromBelow(const double& var, const double& a,const double& epsilon,const double& future,const double& obs_distance,const int& lag,const double& BO, const teb_local_planner::PoseSE2& pos, costmap_2d::Costmap2D* costmap2d, const std::vector<std::vector<int>>& obs_map_labeled)
 {
   //轨迹在行人内
   if (lag == 1)
@@ -143,7 +143,14 @@ inline double penaltyBoundFromBelow(const double& var, const double& a,const dou
     }
     else
     {
-      return (future - obs_distance) + a + epsilon;//这里有问题，不应该是a + epsilon，应该与机器人当前位置和行人当前位置和未来位置有关系
+      if (std::isnan(BO))
+      {
+         return (future - obs_distance) + a + epsilon;
+      }
+      else
+      {
+        return (future - obs_distance) + BO;// + a + epsilon;//这里有问题，不应该是a + epsilon，应该与机器人当前位置和行人当前位置和未来位置有关系,是BO
+      }
     }
   }
   else
