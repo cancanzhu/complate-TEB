@@ -141,13 +141,13 @@ public:
     }
     else
     {
-    // if (shrink_ratio_ == 0)
-    // {
-    //   //在比例为0时先优化一轮，但是这个条件加上就不能过量测试了
-    //   lag = 0;
-    // }
-    // else
-    // {
+    if (shrink_ratio_ == 0)
+    {
+      //在比例为0时先优化一轮，但是这个条件加上就不能过量测试了,因为优化第一轮把后面的轨迹推到安全阈值外了
+      lag = 0;
+    }
+    else
+    {
       if (dist < 0) 
       {
         Eigen::Vector2d information_obs_pose = bandpt->pose().position() + normalvectorOA * future_distance;
@@ -174,7 +174,7 @@ public:
         lag = 0;
       }
     }
-    // }
+    }
 
     // ROS_INFO("距离为:%f",information_obs_pose.x());
 

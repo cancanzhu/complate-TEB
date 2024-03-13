@@ -20,7 +20,7 @@
         <addwaypoint id="middle2"/>
         <addwaypoint id="target"/>
     </agent>
-    <agent x="-8" y="2" n="1" dx="0" dy="0" type="1">
+    <agent x="-8" y="-5" n="1" dx="0" dy="0" type="1">
         <addwaypoint id="middle1"/>
         <addwaypoint id="target"/>
     </agent>

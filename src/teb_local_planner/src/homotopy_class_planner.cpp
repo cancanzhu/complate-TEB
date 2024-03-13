@@ -726,6 +726,7 @@ void HomotopyClassPlanner::randomlyDropTebs()
   }
 }
 
+//选出最优轨迹，对应min_cost_last_best最小的那条轨迹
 TebOptimalPlannerPtr HomotopyClassPlanner::selectBestTeb()
 {
     double min_cost = std::numeric_limits<double>::max(); // maximum cost

@@ -244,9 +244,9 @@ bool TebOptimalPlanner::optimizeTEB(int iterations_innerloop, int iterations_out
   else
   {
     //感觉还是跟判断条件有关，当dist小于0.5时，都能优化到行人前面，而且没有往回优化的轨迹
-    vel_iterations_outerloop = int(iterations_outerloop*max_centroid_velocity_*15);//跟innerloop也有关系，不应该是线性的，应该是指数性的,因为随着优化的进行，路经点之间的时间间隔会越来越大，行人速度较快时，未来位置会更远
+    vel_iterations_outerloop = int(iterations_outerloop*max_centroid_velocity_*12);//跟innerloop也有关系，不应该是线性的，应该是指数性的,因为随着优化的进行，路经点之间的时间间隔会越来越大，行人速度较快时，未来位置会更远
   }
-  // ROS_INFO("迭代次数为:%d",vel_iterations_outerloop);
+  //ROS_INFO("迭代次数为:%d",vel_iterations_outerloop);
   for(int i=0; i< vel_iterations_outerloop; i+=1)//j)
   {
     // for (int j = 0; j < iterations_outerloop; j++)
@@ -1423,6 +1423,8 @@ void TebOptimalPlanner::computeCurrentCost(double obst_cost_scale, double viapoi
 
   if (alternative_time_cost)
   {
+    //执行，计算了时间
+    // sleep(10);
     cost_ += teb_.getSumOfAllTimeDiffs();
     cost_origin_ += teb_.getSumOfAllTimeDiffs();
     // TEST we use SumOfAllTimeDiffs() here, because edge cost depends on number of samples, which is not always the same for similar TEBs,
@@ -1431,9 +1433,10 @@ void TebOptimalPlanner::computeCurrentCost(double obst_cost_scale, double viapoi
   
   // now we need pointers to all edges -> calculate error for each edge-type
   // since we aren't storing edge pointers, we need to check every edge
+  //成本调整
   for (std::vector<g2o::OptimizableGraph::Edge*>::const_iterator it = optimizer_->activeEdges().begin(); it!= optimizer_->activeEdges().end(); it++)
   {
-    double cur_cost = (*it)->chi2();
+    double cur_cost = (*it)->chi2();//获取误差的平方
 
     if (dynamic_cast<EdgeObstacle*>(*it) != nullptr
         || dynamic_cast<EdgeInflatedObstacle*>(*it) != nullptr
@@ -1452,6 +1455,7 @@ void TebOptimalPlanner::computeCurrentCost(double obst_cost_scale, double viapoi
     // cost_ += cur_cost;
   }
 
+//计算高斯代价
   double time = 0;
   double cost_gauss = 0;
   for (int i=0; i<teb_.sizePoses()-1; i++){
@@ -1472,12 +1476,13 @@ void TebOptimalPlanner::computeCurrentCost(double obst_cost_scale, double viapoi
   }
   // std::cout<<"cost: "<<cost_<<", "<<cost_gauss<<std::endl;
   cost_ += cfg_->optim.weight_gauss *cost_gauss;
-
+  //std::cout<<"cost: "<<cost_<<std::endl;
   // delete temporary created graph
   if (!graph_exist_flag) 
     clearGraph();
 }
 
+//高斯函数，从人前面的轨迹代价大，wxo、wyo为障碍物未来位置的x和y坐标，vxo、vyo是障碍物速度的xy分量，wx和wy是控制点的xy坐标
 double TebOptimalPlanner::get2DAsyGaussValue(double wxo, double wyo, double vxo, double vyo, double wx, double wy){
   double rob_radius = 0.2;
   double obs_radius = 0.3;
@@ -1492,9 +1497,10 @@ double TebOptimalPlanner::get2DAsyGaussValue(double wxo, double wyo, double vxo,
   double dis = hypot(wx-wxo, wy-wyo)-rob_radius-obs_radius;
 
   double fb_part;
+  //otherwise
   if (delta_theta>=1.67 && delta_theta<=1.67+3.14)
     fb_part = (dis*cos(delta_theta))*(dis*cos(delta_theta))/(2*sigma_b*sigma_b);
-  else
+  else  //[-pi/2,pi/2]
     fb_part = (dis*cos(delta_theta))*(dis*cos(delta_theta))/(2*sigma_f*sigma_f);
   double lr_part = (dis*sin(delta_theta))*(dis*sin(delta_theta))/(2*sigma_lr*sigma_lr);
   double res = A*pow(2.718,(-lr_part-fb_part));
