@@ -5,10 +5,10 @@
   <arg name="robot_mode" default="0"/>
   <!-- select a simulation scene, [note: you are suggested to activate the former three scenes with person_mode=1, while the latter two scenes with person_mode=0] -->
   <!-- <arg name="scene_file" default="$(find pedsim_simulator)/scenes/complex_demo_static_obs.xml"/> -->
-<!--   <arg name="scene_file" default="$(find pedsim_simulator)/scenes/complex_demo_square.xml"/> -->
+  <!-- <arg name="scene_file" default="$(find pedsim_simulator)/scenes/complex_demo_square.xml"/> -->
   <!-- <arg name="scene_file" default="$(find pedsim_simulator)/scenes/complex_demo_corridor.xml"/> -->
   <!-- <arg name="scene_file" default="$(find pedsim_simulator)/scenes/simple_test_corridor.xml"/>   -->
-  <arg name="scene_file" default="$(find pedsim_simulator)/scenes/simple_test_square.xml"/>  
+  <arg name="scene_file" default="$(find pedsim_simulator)/scenes/simple_test_square.xml"/>   
 
   <!-- set the initial pose of the robot -->
   <arg name="pose_initial_x" default="-5.0"/>
@@ -36,7 +36,7 @@
     <param name="person_mode" value="$(arg person_mode)" type="int"/>
   </node>
 
-  <!-- Fake map_sever -->>
+  <!-- Fake map_sever -->
   <include file="$(find pedsim_map)/launch/pedsim_map.launch"/>
 
   <!-- Robot controller -->

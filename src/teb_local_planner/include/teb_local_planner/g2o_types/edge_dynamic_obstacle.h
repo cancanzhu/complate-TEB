@@ -103,7 +103,7 @@ public:
     // double obstacle_distance = _measurement->getObstacleFutureDistance(bandpt->pose().position(), t_,shrink_ratio_);
     double BO = 0;
     int lag = 0;
-
+    int STC_TEB_flag = 0;
   //障碍物半径0.2，机器人半径0.5
 
     // //判断轨迹前面或者后面的方法进行优化
@@ -134,46 +134,54 @@ public:
     // }
 
     // 判断控制点是否在障碍物内部的方法进行优化，得到障碍物前面一系列点
-    if ((_measurement->getCentroidVelocity()).norm() == 0)
+    if (STC_TEB_flag)
     {
-      lag = 0;
-      // sleep(10);
-    }
-    else
-    {
-    if (shrink_ratio_ == 0)
-    {
-      //在比例为0时先优化一轮，但是这个条件加上就不能过量测试了,因为优化第一轮把后面的轨迹推到安全阈值外了
-      lag = 0;
-    }
-    else
-    {
-      if (dist < 0) 
+      if ((_measurement->getCentroidVelocity()).norm() == 0)
       {
-        Eigen::Vector2d information_obs_pose = bandpt->pose().position() + normalvectorOA * future_distance;
-        // ROS_INFO("obs_pose is %f",information_obs_pose.x());
-        future_distance = robot_model_->estimateSpatioTemporalDistance(bandpt->pose(), _measurement, t_, 2, information_obs_pose);
-        // ROS_INFO("future_distance is %f",future_distance);
-        //std::cout<<"future_distance is: "<<future_distance<<std::endl;
-        obstacle_distance = robot_model_->estimateObstacleFutureDistance(bandpt->pose(), _measurement, t_, shrink_ratio_, information_obs_pose);
-        // if (future_distance == 0 || obstacle_distance == 0)
-        // {
-        //   sleep(10);
-        // }
-        // std::cout<<"obstacle_distance is: "<<obstacle_distance<<std::endl;
-        Eigen::Vector2d future_distance_vector = information_obs_pose - bandpt->pose().position();              // AB向量
-        Eigen::Vector2d obstacle_distance_vector = _measurement->getObstacleFutureDistanceVector2d(bandpt->pose().position(), t_, shrink_ratio_, information_obs_pose); // AO向量
-        BO = calculateBO(obstacle_distance_vector, future_distance_vector, obstacle_distance, future_distance);  
-        lag = 1;
-        // ROS_INFO("BO is %f",BO);
-        // ROS_INFO("666");
+        lag = 0;
         // sleep(10);
       }
       else
       {
-        lag = 0;
+        //  sleep(10);
+        if (shrink_ratio_ == 0)
+        {
+          // 在比例为0时先优化一轮，但是这个条件加上就不能过量测试了,因为优化第一轮把后面的轨迹推到安全阈值外了
+          lag = 0;
+        }
+        else
+        {
+          if (dist < 0)
+          {
+            Eigen::Vector2d information_obs_pose = bandpt->pose().position() + normalvectorOA * future_distance;
+            // ROS_INFO("obs_pose is %f",information_obs_pose.x());
+            future_distance = robot_model_->estimateSpatioTemporalDistance(bandpt->pose(), _measurement, t_, 2, information_obs_pose);
+            // ROS_INFO("future_distance is %f",future_distance);
+            // std::cout<<"future_distance is: "<<future_distance<<std::endl;
+            obstacle_distance = robot_model_->estimateObstacleFutureDistance(bandpt->pose(), _measurement, t_, shrink_ratio_, information_obs_pose);
+            // if (future_distance == 0 || obstacle_distance == 0)
+            // {
+            //   sleep(10);
+            // }
+            // std::cout<<"obstacle_distance is: "<<obstacle_distance<<std::endl;
+            Eigen::Vector2d future_distance_vector = information_obs_pose - bandpt->pose().position();                                                                      // AB向量
+            Eigen::Vector2d obstacle_distance_vector = _measurement->getObstacleFutureDistanceVector2d(bandpt->pose().position(), t_, shrink_ratio_, information_obs_pose); // AO向量
+            BO = calculateBO(obstacle_distance_vector, future_distance_vector, obstacle_distance, future_distance);
+            lag = 1;
+            // ROS_INFO("BO is %f",BO);
+            // ROS_INFO("666");
+            // sleep(10);
+          }
+          else
+          {
+            lag = 0;
+          }
+        }
       }
     }
+    else
+    {
+      lag = 0;
     }
 
     // ROS_INFO("距离为:%f",information_obs_pose.x());

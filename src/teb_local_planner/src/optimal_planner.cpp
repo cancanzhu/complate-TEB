@@ -206,6 +206,8 @@ bool TebOptimalPlanner::optimizeTEB(int iterations_innerloop, int iterations_out
   
   double weight_multiplier = 1.0;
 
+  int STC_TEB_flag = 0;//是否开启逐次优化
+
   // TODO(roesmann): we introduced the non-fast mode with the support of dynamic obstacles
   //                (which leads to better results in terms of x-y-t homotopy planning).
   //                 however, we have not tested this mode intensively yet, so we keep
@@ -225,29 +227,36 @@ bool TebOptimalPlanner::optimizeTEB(int iterations_innerloop, int iterations_out
   //根据行人速度调整迭代次数
   int  vel_iterations_outerloop = 0;
   double max_centroid_velocity_ = 0.0;
-   for (ObstContainer::const_iterator obst = obstacles_->begin(); obst != obstacles_->end(); ++obst)
+  if (STC_TEB_flag)
   {
-    if (!(*obst)->isDynamic())
-      continue;
-
-    if (((*obst)->getCentroidVelocity()).norm() >= max_centroid_velocity_)
+    for (ObstContainer::const_iterator obst = obstacles_->begin(); obst != obstacles_->end(); ++obst)
     {
-      max_centroid_velocity_ = ((*obst)->getCentroidVelocity()).norm();
-    }
-  }
+      if (!(*obst)->isDynamic())
+        continue;
 
-  // ROS_INFO("最大速度为:%f",max_centroid_velocity_);
-  if (max_centroid_velocity_ == 0)
-  {
-    vel_iterations_outerloop = 4;
+      if (((*obst)->getCentroidVelocity()).norm() >= max_centroid_velocity_)
+      {
+        max_centroid_velocity_ = ((*obst)->getCentroidVelocity()).norm();
+      }
+    }
+
+    // ROS_INFO("最大速度为:%f",max_centroid_velocity_);
+    if (max_centroid_velocity_ == 0)
+    {
+      vel_iterations_outerloop = 4;
+    }
+    else
+    {
+      // 感觉还是跟判断条件有关，当dist小于0.5时，都能优化到行人前面，而且没有往回优化的轨迹
+      vel_iterations_outerloop = int(iterations_outerloop * max_centroid_velocity_ * 10); // 跟innerloop也有关系，不应该是线性的，应该是指数性的,因为随着优化的进行，路经点之间的时间间隔会越来越大，行人速度较快时，未来位置会更远
+    }
+    // ROS_INFO("迭代次数为:%d",vel_iterations_outerloop);
   }
   else
   {
-    //感觉还是跟判断条件有关，当dist小于0.5时，都能优化到行人前面，而且没有往回优化的轨迹
-    vel_iterations_outerloop = int(iterations_outerloop*max_centroid_velocity_*12);//跟innerloop也有关系，不应该是线性的，应该是指数性的,因为随着优化的进行，路经点之间的时间间隔会越来越大，行人速度较快时，未来位置会更远
+    vel_iterations_outerloop = iterations_outerloop;
   }
-  //ROS_INFO("迭代次数为:%d",vel_iterations_outerloop);
-  for(int i=0; i< vel_iterations_outerloop; i+=1)//j)
+  for(int i = 0; i <= vel_iterations_outerloop; i += 1)//j)
   {
     // for (int j = 0; j < iterations_outerloop; j++)
     // {   
@@ -268,19 +277,26 @@ bool TebOptimalPlanner::optimizeTEB(int iterations_innerloop, int iterations_out
     //  {
     //   shrink_ratio = 1.0;
     //  }
-     if (no_optimize == 0)
-     {
-      shrink_ratio = (double)i/vel_iterations_outerloop;
-      // shrink_ratio =pow((((double)i)/vel_iterations_outerloop),0.5);
-      // shrink_ratio =4*atan((double)i/vel_iterations_outerloop)/M_PI;
-      // shrink_ratio = 1;
-      // vel_iterations_outerloop = 4;
-     }
-    if (no_optimize == 1)
-     {
+    if (STC_TEB_flag)
+    {
+      if (no_optimize == 0)
+      {
+        shrink_ratio = (double)i / vel_iterations_outerloop;
+        // shrink_ratio =pow((((double)i)/vel_iterations_outerloop),0.5);
+        // shrink_ratio =4*atan((double)i/vel_iterations_outerloop)/M_PI;
+        // shrink_ratio = 1;
+        // vel_iterations_outerloop = 4;
+      }
+      if (no_optimize == 1)
+      {
+        shrink_ratio = 1;
+        vel_iterations_outerloop = 4;
+      }
+    }
+    else
+    {
       shrink_ratio = 1;
-      vel_iterations_outerloop = 4;
-     }
+    }
 
     //  double shrink_ratio =1;
     //  shrink_ratio*=j;
@@ -320,7 +336,6 @@ bool TebOptimalPlanner::optimizeTEB(int iterations_innerloop, int iterations_out
     // //  success = optimizeGraph(iterations_innerloop, false);
     //  no_shrink_optimize = 2;
     // }
-    // else
     // {
     //   no_shrink_optimize = 0;
     // }
@@ -361,14 +376,13 @@ bool TebOptimalPlanner::optimizeTEB(int iterations_innerloop, int iterations_out
 
     // visualization_->publishLocalPlanAndPoses(teb_, teb_);
     //这里最后的计算有大大的问题，待修改，改了
-    if (compute_cost_afterwards && i == vel_iterations_outerloop - 1) // compute cost vec only in the last iteration
+    if (compute_cost_afterwards && i == iterations_outerloop) // compute cost vec only in the last iteration
     {
       computeCurrentCost(obst_cost_scale, viapoint_cost_scale, alternative_time_cost, shrink_ratio);
       shrink_ratio_lag = 0;
       lag_optimal = 0;
       // ROS_INFO("啦啦啦");
     }
-
     clearGraph();
     // }
     weight_multiplier *= cfg_->optim.weight_adapt_factor; //yaml里默认为2
@@ -376,6 +390,46 @@ bool TebOptimalPlanner::optimizeTEB(int iterations_innerloop, int iterations_out
     
   }
 
+  // //正常建图优化（除去动态行人）
+  // optimized_ = false;
+  // weight_multiplier = 1.0;
+  // for (int i = 0; i < iterations_outerloop; i += 1) // j)
+  // {
+  //    if (cfg_->trajectory.teb_autosize)
+  //   {
+  //     // 根据相邻点的时间间隔（距离），对路径进行remove和insert
+  //     //teb_.autoResize(cfg_->trajectory.dt_ref, cfg_->trajectory.dt_hysteresis, cfg_->trajectory.min_samples, cfg_->trajectory.max_samples);
+  //     teb_.autoResize(cfg_->trajectory.dt_ref, cfg_->trajectory.dt_hysteresis, cfg_->trajectory.min_samples, cfg_->trajectory.max_samples, fast_mode);
+
+  //   }
+  //   success = buildGraph(weight_multiplier,shrink_ratio);
+  //   if (success == 0) 
+  //   {
+  //       clearGraph();
+  //       return false;
+  //   }
+
+  //    success = optimizeGraph(iterations_innerloop, false);
+
+  //   if (success == 0) 
+  //   {
+  //       clearGraph();
+  //       return false;
+  //   }
+
+  //   optimized_ = true;
+  //   //这里最后的计算有大大的问题，待修改，改了
+  //   if (compute_cost_afterwards && i == iterations_outerloop - 1) // compute cost vec only in the last iteration
+  //   {
+  //     computeCurrentCost(obst_cost_scale, viapoint_cost_scale, alternative_time_cost, shrink_ratio);
+  //     shrink_ratio_lag = 0;
+  //     lag_optimal = 0;
+  //     // ROS_INFO("啦啦啦");
+  //   }
+  //   clearGraph();
+  //   weight_multiplier *= cfg_->optim.weight_adapt_factor; //yaml里默认为2
+
+  // }
   return true;
 }
 
@@ -471,7 +525,7 @@ bool TebOptimalPlanner::plan(const PoseSE2& start, const PoseSE2& goal, const ge
 }
 
 
-int TebOptimalPlanner::buildGraph(double weight_multiplier,double shrink_ratio)
+bool TebOptimalPlanner::buildGraph(double weight_multiplier,double shrink_ratio)
 {
   if (!optimizer_->edges().empty() || !optimizer_->vertices().empty())
   {
@@ -512,16 +566,26 @@ int TebOptimalPlanner::buildGraph(double weight_multiplier,double shrink_ratio)
   if (cfg_->optim.weight_velocity_obstacle_ratio > 0)
     AddEdgesVelocityObstacleRatio();
 
+  return 1;  
+}
 
+// 仅对障碍物目标函数建图优化
+bool TebOptimalPlanner::buildGraphObstacle(double weight_multiplier,double shrink_ratio)
+{
+  if (!optimizer_->edges().empty() || !optimizer_->vertices().empty())
+  {
+    ROS_WARN("Cannot build graph, because it is not empty. Call graphClear()!");
+    return 0;
+  }
 
-  // if (AddEdgesDynamicObstacles(1.0,shrink_ratio) == 2)
-  // {
-  //   return 2;//路径距离行人较远
-  // }
-  // if (AddEdgesDynamicObstacles(1.0,shrink_ratio) == 1)
-  // {
-  //   return 3;//需要迭代优化
-  // }
+  optimizer_->setComputeBatchStatistics(cfg_->recovery.divergence_detection_enable);
+  
+  // add TEB vertices。即把所有的点和dt添加到优化器中
+  AddTEBVertices();
+  // add Edges (local cost functions)
+
+  if (cfg_->obstacles.include_dynamic_obstacles) // 对动态障碍物，添加time戳，在xyt空间下，teb考虑同一time时的避障
+    AddEdgesDynamicObstacles(1.0, shrink_ratio);
 
   return 1;  
 }
@@ -1409,6 +1473,7 @@ void TebOptimalPlanner::computeCurrentCost(double obst_cost_scale, double viapoi
     // here the graph is build again, for time efficiency make sure to call this function 
     // between buildGraph and Optimize (deleted), but it depends on the application
     buildGraph(1.0,shrink_ratio);	
+    // buildGraphObstacle(1.0,shrink_ratio);
     optimizer_->initializeOptimization();
   }
   else

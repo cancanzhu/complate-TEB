@@ -16,11 +16,11 @@
         <addwaypoint id="robot_goal"/>
     </agent>
     <!-- Add pedestrians -->
-    <agent x="0" y="-0.5" n="1" dx="0" dy="0" type="1">
+    <agent x="-2" y="-0.5" n="1" dx="0" dy="0" type="1">
         <addwaypoint id="middle1"/>
         <addwaypoint id="target"/>
     </agent>
-    <agent x="0" y="0.5" n="1" dx="0" dy="0" type="1">
+    <agent x="-2" y="0.5" n="1" dx="0" dy="0" type="1">
         <addwaypoint id="middle1"/>
         <addwaypoint id="target"/>
     </agent>
