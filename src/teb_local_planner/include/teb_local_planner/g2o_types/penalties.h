@@ -145,11 +145,13 @@ inline double penaltyBoundFromBelow(const double& var, const double& a,const dou
     {
       if (std::isnan(BO))
       {
-         return (future - obs_distance) + a + epsilon;
+        //  return ((future - obs_distance) + a + epsilon)*((future - obs_distance) + a + epsilon);
+        return ((future - obs_distance) + a + epsilon);
       }
       else
       {
-        return (future - obs_distance) + BO;// + a + epsilon;//这里有问题，不应该是a + epsilon，应该与机器人当前位置和行人当前位置和未来位置有关系,是BO
+        return ((future - obs_distance) + BO);
+        // return ((future - obs_distance) + BO)*((future - obs_distance) + BO);// + a + epsilon;//这里有问题，不应该是a + epsilon，应该与机器人当前位置和行人当前位置和未来位置有关系,是BO
       }
     }
   }
@@ -171,12 +173,13 @@ inline double penaltyBoundFromBelow(const double& var, const double& a,const dou
     if (var >= a + epsilon)
     {
       // std::cout<<4<<std::endl;
-      return 0.;
+      return 0;
     }
     else
     {
       // std::cout<<5<<std::endl;
-      return (-var + (a + epsilon));
+      return (-var + (a + epsilon))*(-var + (a + epsilon));
+      // return (-var + (a + epsilon));
     }
   }
 }

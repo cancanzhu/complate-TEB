@@ -10,7 +10,8 @@ class Obstacle_Trans:
     def __init__(self):
         self.gaze_sub = rospy.Subscriber("/persons", TrackedPersons, self.pubDynamicObstaclesFromPerson, queue_size=3)
         self.pub_obs_from_person = rospy.Publisher('dynamic_obstacles', PoseArray, queue_size=1)        
-        self.person_diameter = 0.4
+        self.person_diameter = 0.6
+        # 
         if rospy.has_param("pedsim_fakemap/person_diameter")==True:
             self.person_diameter = rospy.get_param("pedsim_fakemap/person_diameter")
 
@@ -21,7 +22,7 @@ class Obstacle_Trans:
             temp = Pose()
             temp.position.x = person.pose.pose.position.x
             temp.position.y = person.pose.pose.position.y
-            temp.position.z = self.person_diameter/2;
+            temp.position.z = self.person_diameter/2
             temp.orientation.x = person.twist.twist.linear.x
             temp.orientation.y = person.twist.twist.linear.y
             temp.orientation.z = 0

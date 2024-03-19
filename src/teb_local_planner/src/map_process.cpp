@@ -31,14 +31,14 @@ mapProcess::mapProcess(costmap_2d::Costmap2D* costmap, const teb_local_planner::
   resolution_ = costmap_->getResolution();
   origin_x_ = costmap_->getOriginX();
   origin_y_ = costmap_->getOriginY();
-  // project map
+  // project map 代价地图
   char cost_translation_table[256];
   cost_translation_table[0] = 0;  // NO obstacle
-  cost_translation_table[253] = 99;  // INSCRIBED obstacle
-  cost_translation_table[254] = 100;  // LETHAL obstacle
+  cost_translation_table[253] = 99;  // INSCRIBED obstacle 激活的障碍物，并不会直接阻碍机器人运动
+  cost_translation_table[254] = 100;  // LETHAL obstacle 阻塞障碍
   cost_translation_table[255] = -1;  // UNKNOWN
   for (int i = 1; i < 253; i++)
-    cost_translation_table[ i ] = char(1 + (97 * (i - 1)) / 251);
+    cost_translation_table[ i ] = char(1 + (97 * (i - 1)) / 251); //代价地图的线性映射，反映障碍物分布
   // initialize vectors
   map_obs_labeled_ = std::vector<std::vector<int>> (width_, std::vector<int>(height_));
   map_obs_labeled_outline_ = std::vector<std::vector<bool>> (width_, std::vector<bool>(height_, false));
@@ -1053,6 +1053,7 @@ std::vector<Eigen::Vector2d> mapProcess::transPoint2DinMapToVector2dinWorld(std:
 //   // 拿出来最后一个点，如果该点是goal点，则形成新的teb轨迹，并检测是否形成新同伦类
 //   int back = visited.back();
 //   // 该obs可以直接连接目标obs
+// 6666
 //   if (edges_graph_[back][goal_index].first.id!=0){
 //     std::vector<int> path_temp = visited;
 //     path_temp.push_back(goal_index);
@@ -1122,6 +1123,7 @@ std::vector<Eigen::Vector2d> mapProcess::transPoint2DinMapToVector2dinWorld(std:
 //       if (*iter == i)
 //         is_in = true;
 //     }
+//////66
 //     if (is_in)
 //       continue;
 //     // 存在（祖）父节点可以走过该点
@@ -1137,7 +1139,7 @@ std::vector<Eigen::Vector2d> mapProcess::transPoint2DinMapToVector2dinWorld(std:
 //   }
 //   return true;
 // }
-
+////666
 // zqy2024
 bool mapProcess::depthFirst(std::vector<int>& visited, int goal_index, std::vector<std::vector<int>>& res){
   // see http://www.technical-recipes.com/2011/a-recursive-algorithm-to-find-all-paths-between-two-given-nodes/ for details on finding all simple paths  

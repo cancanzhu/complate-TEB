@@ -206,7 +206,7 @@ bool TebOptimalPlanner::optimizeTEB(int iterations_innerloop, int iterations_out
   
   double weight_multiplier = 1.0;
 
-  int STC_TEB_flag = 0;//是否开启逐次优化
+  int STC_TEB_flag = 1;//是否开启逐次优化
 
   // TODO(roesmann): we introduced the non-fast mode with the support of dynamic obstacles
   //                (which leads to better results in terms of x-y-t homotopy planning).
@@ -530,7 +530,7 @@ bool TebOptimalPlanner::buildGraph(double weight_multiplier,double shrink_ratio)
   if (!optimizer_->edges().empty() || !optimizer_->vertices().empty())
   {
     ROS_WARN("Cannot build graph, because it is not empty. Call graphClear()!");
-    return 0;
+    return false;
   }
 
   optimizer_->setComputeBatchStatistics(cfg_->recovery.divergence_detection_enable);
@@ -561,12 +561,15 @@ bool TebOptimalPlanner::buildGraph(double weight_multiplier,double shrink_ratio)
   else
     AddEdgesKinematicsCarlike(); // we have a carlike robot since the turning radius is bounded from below.
 
-  AddEdgesPreferRotDir();
+  AddEdgesPreferRotDir();//机器人偏好的转弯方向，未调用
 
   if (cfg_->optim.weight_velocity_obstacle_ratio > 0)
-    AddEdgesVelocityObstacleRatio();
+  {
+    AddEdgesVelocityObstacleRatio();//速度障碍物比率，考虑动态障碍物，没有调用
+    // sleep(10);
+  }
 
-  return 1;  
+  return true;  
 }
 
 // 仅对障碍物目标函数建图优化
@@ -575,7 +578,7 @@ bool TebOptimalPlanner::buildGraphObstacle(double weight_multiplier,double shrin
   if (!optimizer_->edges().empty() || !optimizer_->vertices().empty())
   {
     ROS_WARN("Cannot build graph, because it is not empty. Call graphClear()!");
-    return 0;
+    return false;
   }
 
   optimizer_->setComputeBatchStatistics(cfg_->recovery.divergence_detection_enable);
@@ -587,23 +590,23 @@ bool TebOptimalPlanner::buildGraphObstacle(double weight_multiplier,double shrin
   if (cfg_->obstacles.include_dynamic_obstacles) // 对动态障碍物，添加time戳，在xyt空间下，teb考虑同一time时的避障
     AddEdgesDynamicObstacles(1.0, shrink_ratio);
 
-  return 1;  
+  return true;  
 }
 
-int TebOptimalPlanner::optimizeGraph(int no_iterations,bool clear_after)
+bool TebOptimalPlanner::optimizeGraph(int no_iterations,bool clear_after)
 {
   if (cfg_->robot.max_vel_x<0.01)
   {
     ROS_WARN("optimizeGraph(): Robot Max Velocity is smaller than 0.01m/s. Optimizing aborted...");
     if (clear_after) clearGraph();
-    return 0;	
+    return false;	
   }
   
   if (!teb_.isInit() || teb_.sizePoses() < cfg_->trajectory.min_samples)
   {
     ROS_WARN("optimizeGraph(): TEB is empty or has too less elements. Skipping optimization.");
     if (clear_after) clearGraph();
-    return 0;	
+    return false;	
   }
   optimizer_->setVerbose(cfg_->optim.optimization_verbose);
   optimizer_->initializeOptimization();
@@ -615,12 +618,12 @@ int TebOptimalPlanner::optimizeGraph(int no_iterations,bool clear_after)
   if(!iter)
   {
 	ROS_ERROR("optimizeGraph(): Optimization failed! iter=%i", iter);
-	return 0;
+	return false;
   }
 
   if (clear_after) clearGraph();	
     
-  return 1;
+  return true;
 }
 
 void TebOptimalPlanner::clearGraph()
@@ -1401,7 +1404,7 @@ void TebOptimalPlanner::AddEdgesPreferRotDir()
     ROS_WARN("TebOptimalPlanner::AddEdgesPreferRotDir(): unsupported RotType selected. Skipping edge creation.");
     return;
   }
-
+  // sleep(10);
   // create edge for satisfiying kinematic constraints
   Eigen::Matrix<double,1,1> information_rotdir;
   information_rotdir.fill(cfg_->optim.weight_prefer_rotdir);

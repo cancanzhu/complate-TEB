@@ -1,5 +1,5 @@
 # Robot
-max_vel_x: 0.7 # [m/s]
+max_vel_x: 0.8 # [m/s]
 min_vel_x: -0.5 # [m/s]
 max_vel_x_backwards: -0.5 # [m/s]
 max_vel_y: 0.0 # [m/s]

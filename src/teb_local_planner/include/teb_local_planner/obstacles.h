@@ -598,6 +598,7 @@ public:
   {
     // setlocale(LC_ALL,"");
     // ROS_INFO("太酷拉");
+    // ROS_INFO("radius is %f",radius_);
     return (pos_ + t*centroid_velocity_*shrink_ratio- position).norm() - radius_;
   }
   virtual double getMinimumSpatioTemporalDistance(const Eigen::Vector2d& position, double t,double shrink_ratio,const Eigen::Vector2d& obs_pose) const

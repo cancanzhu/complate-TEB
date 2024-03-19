@@ -103,8 +103,8 @@ public:
     // double obstacle_distance = _measurement->getObstacleFutureDistance(bandpt->pose().position(), t_,shrink_ratio_);
     double BO = 0;
     int lag = 0;
-    int STC_TEB_flag = 0;
-  //障碍物半径0.2，机器人半径0.5
+    int STC_TEB_flag = 1;
+  //障碍物半径0.3，机器人半径0.2
 
     // //判断轨迹前面或者后面的方法进行优化
     // if (lag_optimal_ == 0)
@@ -164,13 +164,18 @@ public:
             //   sleep(10);
             // }
             // std::cout<<"obstacle_distance is: "<<obstacle_distance<<std::endl;
-            Eigen::Vector2d future_distance_vector = information_obs_pose - bandpt->pose().position();                                                                      // AB向量
+            Eigen::Vector2d future_distance_vector = information_obs_pose - bandpt->pose().position();  // AB向量
             Eigen::Vector2d obstacle_distance_vector = _measurement->getObstacleFutureDistanceVector2d(bandpt->pose().position(), t_, shrink_ratio_, information_obs_pose); // AO向量
-            BO = calculateBO(obstacle_distance_vector, future_distance_vector, obstacle_distance, future_distance);
+            BO = calculateBO(obstacle_distance_vector, future_distance_vector, obstacle_distance, future_distance + 0.3);
             lag = 1;
             // ROS_INFO("BO is %f",BO);
             // ROS_INFO("666");
             // sleep(10);
+            // if (std::isnan(BO))
+            // {
+            //   ROS_INFO("集");
+            //   sleep(3);
+            // }
           }
           else
           {
@@ -215,14 +220,24 @@ public:
   
   double calculateBO(const Eigen::Vector2d& AO, const Eigen::Vector2d& AB, double absAO, double absAB)const
   {
-    double dist = 0.8;//距离障碍物的安全阈值
+    double dist = 0.6;//距离障碍物的安全阈值
     // if (absAO == 0 || absAB == 0)
     // {
     //   sleep(10);
     // }
     double theta1 = std::acos(AO.dot(AB)/(absAO*absAB ));
-    // ROS_INFO("theta1 is %f",theta1);//nan? 数值精度问题？两个夹角非常接近0 yes 因为障碍物内部点都太近了
+    // ROS_INFO("theta1 is %f",theta1);//nan? 
+      // if (std::isnan(theta1))
+      // {
+      //    ROS_INFO("集");
+      //    sleep(3);
+      // }
     double ABB = absAO*cos(theta1)-sqrt(pow(absAO*cos(theta1),2)-absAO*absAO+dist*dist);
+      // if (std::isnan(ABB))
+      // {
+      //    ROS_INFO("集");
+      //    sleep(3);
+      // }
     double BB =2*ABB*sin(theta1/2);
     double theta3 = acos((ABB*ABB + dist*dist - absAO*absAO)/(2*ABB*dist));
     double theta4 = theta3 - M_PI/2 + theta1/2;

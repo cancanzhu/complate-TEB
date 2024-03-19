@@ -548,7 +548,7 @@ protected:
    * @param clear_after Clear the graph after optimization.
    * @return \c true, if optimization terminates successfully, \c false otherwise.
    */
- int optimizeGraph(int no_iterations, bool clear_after=true);
+ bool optimizeGraph(int no_iterations, bool clear_after=true);
   
   /**
    * @brief Clear an existing internal hyper-graph.

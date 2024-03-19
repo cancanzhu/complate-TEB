@@ -449,7 +449,7 @@ void HomotopyClassPlanner::renewAndAnalyzeOldTebs(bool delete_detours)
 
 void HomotopyClassPlanner::updateReferenceTrajectoryViaPoints(bool all_trajectories)
 {
-  std::cout<<"               tebs: "<<tebs_.size()<<std::endl;
+  // std::cout<<"               tebs: "<<tebs_.size()<<std::endl;
   if ( (!all_trajectories && !initial_plan_) || !via_points_ || via_points_->empty() || cfg_->optim.weight_viapoint <= 0)
     return;
 
@@ -618,6 +618,7 @@ void HomotopyClassPlanner::updateAllTEBs(const PoseSE2* start, const PoseSE2* go
 
 void HomotopyClassPlanner::optimizeAllTEBs(int iter_innerloop, int iter_outerloop)
 {
+  std::cout<<"               tebs: "<<tebs_.size()<<std::endl;
   // 如果用grahpicTEB，则需要在优化点到障碍物的距离时，用到costmap和mapObsLabeled
   if (cfg_->hcp.graphic_exploration){
     for (TebOptPlannerContainer::iterator it_teb = tebs_.begin(); it_teb != tebs_.end(); ++it_teb){
