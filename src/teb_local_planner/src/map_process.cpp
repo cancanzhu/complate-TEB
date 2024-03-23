@@ -29,8 +29,8 @@ mapProcess::mapProcess(costmap_2d::Costmap2D* costmap, const teb_local_planner::
   width_ = costmap_->getSizeInCellsX();
   height_ = costmap_->getSizeInCellsY();
   resolution_ = costmap_->getResolution();
-  origin_x_ = costmap_->getOriginX();
-  origin_y_ = costmap_->getOriginY();
+  origin_x_ = costmap_->getOriginX(); //获取地图X轴原点坐标
+  origin_y_ = costmap_->getOriginY(); //Y原点坐标
   // project map 代价地图
   char cost_translation_table[256];
   cost_translation_table[0] = 0;  // NO obstacle
@@ -38,30 +38,30 @@ mapProcess::mapProcess(costmap_2d::Costmap2D* costmap, const teb_local_planner::
   cost_translation_table[254] = 100;  // LETHAL obstacle 阻塞障碍
   cost_translation_table[255] = -1;  // UNKNOWN
   for (int i = 1; i < 253; i++)
-    cost_translation_table[ i ] = char(1 + (97 * (i - 1)) / 251); //代价地图的线性映射，反映障碍物分布
+    cost_translation_table[ i ] = char(1 + (97 * (i - 1)) / 251); // 代价地图的线性映射，反映障碍物分布
   // initialize vectors
-  map_obs_labeled_ = std::vector<std::vector<int>> (width_, std::vector<int>(height_));
-  map_obs_labeled_outline_ = std::vector<std::vector<bool>> (width_, std::vector<bool>(height_, false));
-  map_obs_shrinked_labeled_ = std::vector<std::vector<int>> (width_, std::vector<int>(height_));
-  map_border_labeled_ = std::vector<std::vector<int>> (width_, std::vector<int>(height_));
-  map_corner_labeled_ = std::vector<std::vector<int>> (width_, std::vector<int>(height_));
+  map_obs_labeled_ = std::vector<std::vector<int>> (width_, std::vector<int>(height_)); //存储障碍物标记信息
+  map_obs_labeled_outline_ = std::vector<std::vector<bool>> (width_, std::vector<bool>(height_, false)); //存储地图中障碍物的轮廓标记
+  map_obs_shrinked_labeled_ = std::vector<std::vector<int>> (width_, std::vector<int>(height_)); //存储地图中经过收缩处理后的障碍物标记信息
+  map_border_labeled_ = std::vector<std::vector<int>> (width_, std::vector<int>(height_)); //地图中边界的标记信息
+  map_corner_labeled_ = std::vector<std::vector<int>> (width_, std::vector<int>(height_)); //存储地图的角落标记信息
   // assign map
   unsigned char* data = costmap_->getCharMap();
   // assign static obstacles
   for (unsigned int i = 0; i < width_*height_; i++)
-    map_vector_.push_back(cost_translation_table[ data[ i ]]);
+    map_vector_.push_back(cost_translation_table[ data[ i ]]); //一维障碍信息 存储地图每个像素的代价信息
   auto map_vector_copied = map_vector_;
   // assign dynamic pedestrians
   rob_radius_ = 0.2;
   obs_radius_ = 0.3;
-  length_in_map_ = (rob_radius_+obs_radius_)/resolution_;
+  length_in_map_ = (rob_radius_+obs_radius_)/resolution_; //计算机器人和行人在地图上占据的空间长度，根据分辨率确定
   for (auto p:dynamic_obstacle_){
     int mx, my;
     world2map(mx,my,p[0],p[1]);
     for (int dx = -length_in_map_; dx<=length_in_map_; dx++){
       for (int dy=-length_in_map_; dy<=length_in_map_; dy++){
         if (checkInMap(mx+dx,my+dy) && std::hypot(dx,dy)<=length_in_map_){
-          map_vector_[mx+dx+(my+dy)*width_] = 100;
+          map_vector_[mx+dx+(my+dy)*width_] = 100; //mx+dx像素在地图中的列坐标 my+dy*width计算像素行坐标在一维数组中的偏移量
         }
       }
     }
@@ -85,13 +85,13 @@ mapProcess::mapProcess(costmap_2d::Costmap2D* costmap, const teb_local_planner::
     map_vector_[map_vector_.size()-1-i] = 0;
     map_vector_copied[i] = 0;
     map_vector_copied[map_vector_copied.size()-1-i] = 0;
-  }
+  }// 清除左右边界
   for (int j=0; j<height_; j++){
     map_vector_[j*width_] = 0;
     map_vector_[j*width_+width_-1] = 0;
     map_vector_copied[j*width_] = 0;
     map_vector_copied[j*width_+width_-1] = 0;
-  }
+  }// 清除上下边界
   // translate start and goal points into map frame (resolution)
   world2map(start_in_map_x_, start_in_map_y_, start.position().x(), start.position().y());
   world2map(goal_in_map_x_, goal_in_map_y_, goal.position().x(), goal.position().y());
@@ -100,8 +100,8 @@ mapProcess::mapProcess(costmap_2d::Costmap2D* costmap, const teb_local_planner::
   for (int i=0; i<map_vector_.size(); i++){
     // map_vector
     auto p1 = map_vector_[i];
-    if (p1 != (char)0)
-      map_int_.push_back('d');
+    if (p1 != (char)0) //非空设为d
+      map_int_.push_back('d'); //d 容易识别障碍
     else
       map_int_.push_back((uint8_t)p1);
     // map_vector_copied
@@ -135,7 +135,7 @@ void mapProcess::world2map(int& mx, int& my, double wx, double wy){
 
 
 std::map<int, std::vector<Point2D>> mapProcess::clusterObs(){
-  // 斜对角遍历2D矩阵
+  // 斜对角遍历2D矩阵 计算机图形学斜对角检测
   label_index_ = 1;
   for (int x_iter=0; x_iter<width_+height_; x_iter++){
     // x+y的和 为 x_iter
@@ -163,14 +163,14 @@ std::map<int, std::vector<Point2D>> mapProcess::clusterObs(){
   for (const auto& i:obs_list_){
     label_list_.push_back(i.first);
   }
-  // initialize visited_
+  // initialize visited_：记录两个障碍之间的连接是否被访问过
   for (int i=0; i<obs_list_.size();i++){
-    visited_.push_back({});
+    visited_.push_back({}); 
     for (int j=0; j<obs_list_.size();j++){
       visited_[i].push_back(false);
     }
   }
-  // initialize edges_graph_
+  // initialize edges_graph_ ：存放组之间可以直接相连的特殊点
   std::vector<std::pair<Point2D, Point2D>> temp1 = {};
   std::pair<Point2D, Point2D> temp2 = {};
   for (int i=0; i<obs_list_.size();i++){
@@ -179,14 +179,14 @@ std::map<int, std::vector<Point2D>> mapProcess::clusterObs(){
       edges_graph_[i].push_back(temp2);
     }
   }
-  // initialize covers_graph_
+  // initialize covers_graph_：存储连接两个障碍组的特殊路径
   for (int i=0; i<obs_list_.size();i++){
     covers_graph_.push_back({});
     for (int j=0; j<obs_list_.size();j++){
       covers_graph_[i].push_back({});
     }
   }
-  // assign startID and goalID
+  // assign startID and goalID：这不是在重复操作？
   for(int i=0; i<label_list_.size(); i++){
     if (label_list_[i] == startID_){
       startIndex_ = i;
@@ -218,7 +218,7 @@ void mapProcess::addObsConnect(int x, int y){
       obs_list_[new_label].insert(obs_list_[new_label].end(),temp.begin(),temp.end());
       // 改变地图
       for (auto p:temp){
-        map_obs_labeled_[p.x][p.y]=new_label;
+        map_obs_labeled_[p.x][p.y]=new_label; //障碍组中的label都更新为new_label
       }
     }
     map_obs_labeled_[x][y] = map_obs_labeled_[x][y-1];
@@ -270,15 +270,15 @@ bool mapProcess::checkInMap(int x, int y){
 }
 
 std::map<int, std::vector<Point2D>>mapProcess::borderIdentify(){
-  cv::Mat edge_map = map_cv_;
+  cv::Mat edge_map = map_cv_; //原始地图
   cv::Mat dst, comp;
-  cv::dilate(map_cv_, dst, cv::Mat());
-  cv::compare(edge_map, dst, comp, cv::CMP_NE);
+  cv::dilate(map_cv_, dst, cv::Mat()); //膨胀操作，将原始地图膨胀后存放在dst中
+  cv::compare(edge_map, dst, comp, cv::CMP_NE); //比较原始地图和膨胀地图，不等则将像素设为白色，否则为黑色，存放在comp中
   // cv::imshow("Canny edge detection", comp);
   // cv::waitKey(0);
 
   // 这个循环用于保存map_border_labeled_这个地图
-  std::vector<Point2D> kernel = {Point2D(-1,-1),Point2D(-1,0),Point2D(-1,1),Point2D(0,-1),Point2D(0,1),Point2D(1,-1),Point2D(1,0),Point2D(1,1)};
+  std::vector<Point2D> kernel = {Point2D(-1,-1),Point2D(-1,0),Point2D(-1,1),Point2D(0,-1),Point2D(0,1),Point2D(1,-1),Point2D(1,0),Point2D(1,1)}; 
   for(int j=0; j < comp.rows; j++)
   {
       for(int i=0; i<comp.cols;i++)
@@ -1090,11 +1090,11 @@ std::vector<Eigen::Vector2d> mapProcess::transPoint2DinMapToVector2dinWorld(std:
     
 //     return true;    
 //   }
-
+//666
 //   if (max_path_explore_number_for_GraphicTEB_!=-1 && res.size()>=max_path_explore_number_for_GraphicTEB_){
 //     return false;
 //   }
-  
+//666
 //   // edges_graph是一个方阵
 //   auto is_father_can_visit = std::vector<bool>(edges_graph_.size(),false);
 //   if (is_limitation_){

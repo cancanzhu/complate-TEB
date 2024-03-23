@@ -302,7 +302,8 @@ public:
         Eigen::Vector3d s1 (obstacles->at(l)->getCentroid()(0), obstacles->at(l)->getCentroid()(1), 0);
         double t = 1200; // some large value for defining the end point of the obstacle/"conductor" model
         Eigen::Vector3d s2;
-        obstacles->at(l)->spredictCentroidConstantVelocity(t, s2.head(2));
+        // obstacles->at(l)->predictCentroidConstantVelocity(t, s2.head(2));
+        obstacles->at(l)->static_predictCentroidConstantVelocity(t, s2.head(2));
         s2[2] = t;
         Eigen::Vector3d ds = s2 - s1;
         double ds_sq_norm = ds.squaredNorm(); // by definition not zero as t > 0 (3rd component)

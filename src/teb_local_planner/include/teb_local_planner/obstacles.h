@@ -201,7 +201,7 @@ public:
     position = getCentroid() + t * getCentroidVelocity();
   }
   //将行人视为静态，从而在3D下找到两条拓扑轨迹
-  virtual void spredictCentroidConstantVelocity(double t, Eigen::Ref<Eigen::Vector2d> position) const
+  virtual void static_predictCentroidConstantVelocity(double t, Eigen::Ref<Eigen::Vector2d> position) const
   {
     position = getCentroid();// + t * getCentroidVelocity();
   }
@@ -464,7 +464,7 @@ public:
   {
     position = pos_ + t*centroid_velocity_;
   }
-  virtual void spredictCentroidConstantVelocity(double t, Eigen::Ref<Eigen::Vector2d> position) const
+  virtual void static_predictCentroidConstantVelocity(double t, Eigen::Ref<Eigen::Vector2d> position) const
   {
     position = pos_;// + t*centroid_velocity_;
   }
@@ -647,7 +647,7 @@ public:
   {
     position = pos_ + t*centroid_velocity_;
   }
-  virtual void spredictCentroidConstantVelocity(double t, Eigen::Ref<Eigen::Vector2d> position) const
+  virtual void static_predictCentroidConstantVelocity(double t, Eigen::Ref<Eigen::Vector2d> position) const
   {
     position = pos_;// + t*centroid_velocity_;
   }
