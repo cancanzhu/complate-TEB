@@ -960,7 +960,7 @@ int TebOptimalPlanner::AddEdgesDynamicObstacles(double weight_multiplier,double 
   如果控制点比较稀疏,咋办
   如何精准判断轨迹是在行人前面还是后面
   例如平行着走的时候
-  能不能判断个数，就是在与行人交角为锐角的控制点的个数
+  判断交角累计和，并归一化
   先判断行人速度是否为0
   要在shrink_ratio不为0的时候，先优化一轮
 */
@@ -986,7 +986,7 @@ int TebOptimalPlanner::AddEdgesDynamicObstacles(double weight_multiplier,double 
           Eigen::Vector2d judge_ctrl_point;
           for (int i = 1; i < teb_.sizePoses() - 1; ++i)
           {
-            // 根据最近控制点判断轨迹前后
+            // 根据最近控制点判断轨迹前后 如果稀疏，则不合理
             double dist = robot_model_.get()->estimateSpatioTemporalDistance(teb_.PoseVertex(i)->pose(), obst->get(), time_lab, shrink_ratio);
             // time_lab += teb_.TimeDiff(i);
             if (min_lab >= dist) // 寻找距离障碍物未来位置最近点
@@ -1550,7 +1550,7 @@ void TebOptimalPlanner::computeCurrentCost(double obst_cost_scale, double viapoi
     cost_yaw += std::abs(teb_.PoseVertex(i + 1)->theta() - teb_.PoseVertex(i)->theta());
   }
   cost_yaw /= teb_.sizePoses();
-  cost_ += cost_yaw;
+  // cost_ += cost_yaw;
 
   // 累计到障碍物的距离
   time = 0;
@@ -1570,10 +1570,32 @@ void TebOptimalPlanner::computeCurrentCost(double obst_cost_scale, double viapoi
     time += teb_.TimeDiff(i);
   }
   cost_obs_dist /= teb_.sizePoses();//路径长度不一致因此需要归一化处理
-  cost_ += 1/cost_obs_dist;
+  // cost_ += 1/cost_obs_dist;//取倒数，从远离行人的地方通过
+  
+  //区分前面轨迹和后面轨迹，前面轨迹代价大, 行人得有速度
+  //但是如果机器人通过了行人但是没有到达终点，会认为反向轨迹是在行人前面，无法到达终点
+  time = 0;
+  double cost_distinguish = 0;
+  for (int i = 0; i < teb_.sizePoses() - 1; i++)
+  {
+    auto p = teb_.PoseVertex(i)->pose().position();
+    for(auto dynamic_obs : *obstacles_)
+    {
+      if (!dynamic_obs->isDynamic())
+      {
+        continue;
+      }
+    auto po = (dynamic_obs->getCentroidVelocity()).normalized();
+    auto p_obs = (p - dynamic_obs->getCentroid()).normalized();
+    cost_distinguish += po.dot(p_obs);
+    }
+  }
+  cost_distinguish /= teb_.sizePoses();
+  cost_ += -cost_distinguish*100000;
+  
 
   // std::cout<<"cost: "<<cost_<<", "<<cost_gauss<<std::endl;
-  cost_ += cfg_->optim.weight_gauss *cost_gauss;
+  // cost_ += cfg_->optim.weight_gauss *cost_gauss;
   //std::cout<<"cost: "<<cost_<<std::endl;
   // delete temporary created graph
   if (!graph_exist_flag) 
