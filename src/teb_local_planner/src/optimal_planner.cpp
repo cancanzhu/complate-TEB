@@ -1542,6 +1542,36 @@ void TebOptimalPlanner::computeCurrentCost(double obst_cost_scale, double viapoi
     cost_gauss = std::max(cost_gauss,current_cost_gauss);
     time += teb_.TimeDiff(i);
   }
+  
+  // 累计航向变化
+  double cost_yaw = 0;
+  for (int i = 0; i < teb_.sizePoses() - 1; i++)
+  {
+    cost_yaw += std::abs(teb_.PoseVertex(i + 1)->theta() - teb_.PoseVertex(i)->theta());
+  }
+  cost_yaw /= teb_.sizePoses();
+  cost_ += cost_yaw;
+
+  // 累计到障碍物的距离
+  time = 0;
+  double cost_obs_dist = 0;
+  for (int i = 0; i < teb_.sizePoses() - 1; i++)
+  {
+    auto p = teb_.PoseVertex(i)->pose().position();
+    // std::cout<<"("<<p->x()<<","<<p->y()<<","<<time<<") ";
+    for (auto dynamic_obs : *obstacles_)
+    {
+      if (!dynamic_obs->isDynamic())
+        continue;
+      auto po = dynamic_obs->getCentroid() + time * dynamic_obs->getCentroidVelocity();
+      // std::cout<<"relative: ("<<po.x()<<","<<po.y()<<"), ("<<vo.x()<<","<<vo.y()<<"), ("<<p->x()<<","<<p->y()<<")"<<std::endl;
+      cost_obs_dist += (p - po).norm();
+    }
+    time += teb_.TimeDiff(i);
+  }
+  cost_obs_dist /= teb_.sizePoses();//路径长度不一致因此需要归一化处理
+  cost_ += 1/cost_obs_dist;
+
   // std::cout<<"cost: "<<cost_<<", "<<cost_gauss<<std::endl;
   cost_ += cfg_->optim.weight_gauss *cost_gauss;
   //std::cout<<"cost: "<<cost_<<std::endl;
