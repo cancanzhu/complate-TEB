@@ -273,15 +273,15 @@ std::map<int, std::vector<Point2D>>mapProcess::borderIdentify(){
   cv::Mat edge_map = map_cv_; //原始地图
   cv::Mat dst, comp;
   cv::dilate(map_cv_, dst, cv::Mat()); //膨胀操作，将原始地图膨胀后存放在dst中
-  cv::compare(edge_map, dst, comp, cv::CMP_NE); //比较原始地图和膨胀地图，不等则将像素设为白色，否则为黑色，存放在comp中
+  cv::compare(edge_map, dst, comp, cv::CMP_NE); //比较原始地图和膨胀地图，不等则将像素设为白色255，否则为黑色0，存放在comp中
   // cv::imshow("Canny edge detection", comp);
   // cv::waitKey(0);
 
   // 这个循环用于保存map_border_labeled_这个地图
   std::vector<Point2D> kernel = {Point2D(-1,-1),Point2D(-1,0),Point2D(-1,1),Point2D(0,-1),Point2D(0,1),Point2D(1,-1),Point2D(1,0),Point2D(1,1)}; 
-  for(int j=0; j < comp.rows; j++)
+  for(int j=0; j < comp.rows; j++)//行数
   {
-      for(int i=0; i<comp.cols;i++)
+      for(int i=0; i<comp.cols;i++)//列数
       {
           // 只要comp中的元素是非空的，那么它就是边缘点
           if(comp.at<uint8_t>(j,i))
@@ -296,14 +296,14 @@ std::map<int, std::vector<Point2D>>mapProcess::borderIdentify(){
               }
               // assert(label!=0); //除了0 还有可能是start或gal
               // 添加border点到border map中
-              map_border_labeled_[i][j] = label;
+              map_border_labeled_[i][j] = label; //边界标签
           }
       }
   }
 
   // 扩展归并，拟合border_list
-  auto map_is_visited_temp = std::vector<std::vector<bool>> (width_, std::vector<bool>(height_, false));
-  // 遍历时的顺序为：右、上、右上、下、右下、左、左上、左下。即：上与右优先遍历、非斜线优先遍历，保证borderlist是顺时针的
+  auto map_is_visited_temp = std::vector<std::vector<bool>> (width_, std::vector<bool>(height_, false));//宽为width_,高为height_的二维向量，初始值为false
+  // 遍历时的顺序为：右、上、右上、下、右下、左、左上、左下。即：上与右优先遍历、非斜线优先遍历，保证borderlist是顺时针的, 为啥
   std::vector<Point2D> kernel2 = {Point2D(1,0),Point2D(0,1),Point2D(1,1),Point2D(0,-1),Point2D(1,-1),Point2D(-1,0),Point2D(-1,1),Point2D(-1,-1)};
   for (int y=0; y<dst.rows; y++){
     for (int x=0; x<dst.cols; x++){
@@ -313,8 +313,8 @@ std::map<int, std::vector<Point2D>>mapProcess::borderIdentify(){
         continue;
       // 标记当前点为已读
       Point2D p = Point2D(x,y);
-      map_is_visited_temp[p.x][p.y] = true;
-      border_list_[label].push_back(Point2D(x,y,0,label));
+      map_is_visited_temp[p.x][p.y] = true; //访问过的点设为true
+      border_list_[label].push_back(Point2D(x,y,0,label)); //当前xy和标签放入
       // 深搜，进行归并
       deepSearchForFindingBorders(p, map_is_visited_temp, kernel2, p, label);
     }
@@ -327,8 +327,8 @@ std::map<int, std::vector<Point2D>>mapProcess::borderIdentify(){
       auto iter_next = std::next(iter);
       if (iter_next == border->second.end())
         break;
-      if (abs(iter->x-iter_next->x)+abs(iter->y-iter_next->y)>4){
-        border->second.erase(iter_next, border->second.end());
+      if (abs(iter->x-iter_next->x)+abs(iter->y-iter_next->y)>4){//两点之间的距离过远，则删除中间的点
+        border->second.erase(iter_next, border->second.end());//删除下一个点到终点的所有点，为啥
         break;
       }
       iter++;
@@ -343,15 +343,15 @@ std::map<int, std::vector<Point2D>>mapProcess::borderIdentify(){
 bool mapProcess::deepSearchForFindingBorders(Point2D current, std::vector<std::vector<bool>>& map_is_visited_temp, const std::vector<Point2D>& kernel, const Point2D& start, const int& label){
   for (auto k:kernel){
     if (current.x+k.x==start.x &&current.y+k.y==start.y){
-      return true;
+      return true;//判断当前点是否与起始点相同，相同返回true，表示搜索成功，找到了闭合的边界
     }
-    if (checkInMap(current.x+k.x, current.y+k.y) &&map_border_labeled_[current.x+k.x][current.y+k.y]==label && map_is_visited_temp[current.x+k.x][current.y+k.y] == false){
+    if (checkInMap(current.x+k.x, current.y+k.y) &&map_border_labeled_[current.x+k.x][current.y+k.y]==label && map_is_visited_temp[current.x+k.x][current.y+k.y] == false){//防止递归访问到其他点，保证按照顺序形成边界点
       Point2D current_new(current.x, current.y);
       current_new.x = current.x+k.x;
       current_new.y = current.y+k.y;
-      map_is_visited_temp[current_new.x][current_new.y] = true;
+      map_is_visited_temp[current_new.x][current_new.y] = true; //将当前点标记为已经访问
       border_list_[label].push_back(Point2D(current_new.x,current_new.y,0,label));
-      if (deepSearchForFindingBorders(current_new, map_is_visited_temp, kernel, start, label))
+      if (deepSearchForFindingBorders(current_new, map_is_visited_temp, kernel, start, label))//递归寻找边界，不断更新当前点
         return true;
     }
   }
@@ -382,24 +382,24 @@ std::map<int, std::vector<Point2D>> mapProcess::cornerIdentify(){
     cv::Mat cornered_map;
     cornered_map = map_cv_;
     // cvtColor(map_cv_, cornered_map, cv::COLOR_BGR2GRAY);
-    cv::Mat dst, dst_norm;
+    cv::Mat dst, dst_norm; //用于存储harris角点检测的结果
     // Harris corner detect
     // https://blog.csdn.net/fengweichangzi/article/details/119001661
     // int kThresh = 118;
-    int kThresh = 80;
-    int kBlockSize = 2;    
-    int kApertureSize = 3;
+    int kThresh = 80; //设置角点阈值，用于确定哪些点被视为角点
+    int kBlockSize = 2;    //设置Harris角点检测的邻域大小
+    int kApertureSize = 3; //设置sobel算子的孔径大小
     double k = 0.04;
-    cv::cornerHarris(cornered_map, dst, kBlockSize, kApertureSize, k);
-    cv::normalize(dst, dst_norm, 0, 255, cv::NORM_MINMAX, CV_32FC1);
+    cv::cornerHarris(cornered_map, dst, kBlockSize, kApertureSize, k); //角点检测并存储在dist中
+    cv::normalize(dst, dst_norm, 0, 255, cv::NORM_MINMAX, CV_32FC1); //角点归一化处理，以便更好地可视化
 
     // draw detected corners，这个循环只修改地图map_coner_labeled
-    std::vector<Point2D> kernel = {Point2D(-1,-1),Point2D(-1,0),Point2D(-1,1),Point2D(0,-1),Point2D(0,-1),Point2D(1,-1),Point2D(1,0),Point2D(1,1)};
+    std::vector<Point2D> kernel = {Point2D(-1,-1),Point2D(-1,0),Point2D(-1,1),Point2D(0,-1),Point2D(0,1),Point2D(1,-1),Point2D(1,0),Point2D(1,1)};//肿么两个0 ,-1
     for(int j=0; j < dst_norm.rows; j++)
     {
-        for(int i=0; i<dst_norm.cols;i++)
+        for(int i=0; i < dst_norm.cols; i++)
         {
-            if((int)dst_norm.at<float>(j,i) > kThresh)
+            if((int)dst_norm.at<float>(j,i) > kThresh)//判断是否为角点
             {
               // 八临接找label，归并到border上
               int label = 0;
@@ -413,7 +413,7 @@ std::map<int, std::vector<Point2D>> mapProcess::cornerIdentify(){
                 }
               }
               if (label !=0 && map_corner_labeled_[x][y]==0){
-                map_corner_labeled_[x][y] = label;
+                map_corner_labeled_[x][y] = label;  //ID 给corner_labeled
               }
 
             }
@@ -444,7 +444,7 @@ std::map<int, std::vector<Point2D>> mapProcess::cornerIdentify(){
       if (step==0)
         nums = 1;
       else
-        nums = (ceil)(float(label_len)/step);   
+        nums = (ceil)(float(label_len)/step);   //ceil向上取整
       int kernel[nums];  // 按照step，确定kernel的点位（差值）
       for (int i=0; i<nums; i++)
         kernel[i] = i*step;
@@ -453,7 +453,7 @@ std::map<int, std::vector<Point2D>> mapProcess::cornerIdentify(){
       for(int inner=0; inner< label_len; inner++){
         int temp = 0;
         for (auto delta:kernel){
-          temp += iter_o->second[(inner + delta + label_len)%label_len].value;
+          temp += iter_o->second[(inner + delta + label_len)%label_len].value;//对应论文公式(10)
         }
         if (temp > max_inner){
           max_inner = temp;
@@ -565,7 +565,7 @@ std::vector<int> mapProcess::findPathBetweenObs(int obsID1, int obsID2){
     corner1_nearest_border = cover_check.first;
     corner2_nearest_border = cover_check.second;
 
-    // 障碍物内部 进行跳跃式地更新
+    // 障碍物内部 进行跳跃式地更新 跳到各自最近边界处
     // 确保最近点不是自己
     if (!(corner1_nearest_border.x==corner1.x && corner1_nearest_border.y==corner1.y)){
       last_last_index1 = last_index1;
@@ -677,7 +677,7 @@ std::pair<Point2D, Point2D> mapProcess::checkCoverBorder(const Point2D& p1, cons
   int label;
   for (auto it=line_vec.begin(); it!=line_vec.end(); it++){
     label = map_border_labeled_[it->x][it->y];
-    // 如果压倒了p2自己，则直接break
+    // 如果压倒了p2自己，则直接breakres
     if (it->x==p2.x && it->y==p2.y){
       back_encounter_p.id = label;
       back_encounter_p.x = it->x;
@@ -714,6 +714,7 @@ std::pair<Point2D, Point2D> mapProcess::checkCoverBorder(const Point2D& p1, cons
 
 // generate a vector pointed from p1 to p2 by Bresenham algorithm
 // note: 4-adjacent points, line_vec contains p1 and p2
+//该算法用于在计算机图形学中绘制直线，利用直线斜率和离散像素点之间的关系，选择最佳像素点绘制直线
 std::vector<Point2D> mapProcess::Bresenham (const Point2D& p1, const Point2D& p2)
 {
   std::vector<Point2D> line_vec = {p1};
@@ -723,11 +724,11 @@ std::vector<Point2D> mapProcess::Bresenham (const Point2D& p1, const Point2D& p2
   int sy = p2.y>p1.y?1:-1;
   int x = p1.x;
   int y = p1.y;
-  if (dx>dy){
+  if (dx>dy){//检查斜率是否小于等于1，判断直线是更水平还是更垂直，根据增量大小确定直线方向，sx和sy决定方向
     int e = -dx;
     for (int i=0; i<dx; i++){
       x += sx;
-      e += 2*dy;
+      e += 2*dy;//水平移动后，垂直距离的变化量
       line_vec.push_back(Point2D(x,y));
       if (e>=0){
         y += sy;
@@ -760,7 +761,7 @@ std::vector<Point2D> mapProcess::Bresenham (const Point2D& p1, const Point2D& p2
     }
   }
 
-  return line_vec;
+  return line_vec;//存储从p1到p2近似直线的离散点
 }
 
 bool mapProcess::checkCollision (const Point2D& p1, const Point2D& p2){
@@ -793,7 +794,6 @@ int mapProcess::findNearestCornerFromBorder (const Point2D& p){
   }
   return min_index;
 }
-
 void mapProcess::printVector(std::vector<Point2D> obj){
   for(auto it=obj.begin();it!=obj.end();it++){
     std::cout<<"("<<it->x<<","<<it->y<<","<<it->value<<","<<it->id<<") ";
@@ -900,7 +900,7 @@ std::vector<int> mapProcess::getCoverObs(int ID1, int ID2){
   return covers_graph_[index1][index2];
 }
 
-// 启动深搜，找同伦轨迹
+// 启动深搜，找同伦轨迹  图3(e)
 std::vector<std::vector<Eigen::Vector2d>> mapProcess::findHomoPaths(const teb_local_planner::PoseSE2 &start, const teb_local_planner::PoseSE2 &goal, const int& max_path_explore_number_for_GraphicTEB, const int& max_path_remained_for_GraphicTEB, const bool& is_limitation, const bool& is_hallway){
   auto t = ros::Time::now();
   //找起点和终点的ID
@@ -1179,6 +1179,17 @@ bool mapProcess::depthFirst(std::vector<int>& visited, int goal_index, std::vect
       length_approximate_.push_back(length_temp);
       res.push_back(path_temp);
     }
+
+    //zzq
+    //判断长度，轨迹过长就剪除
+    // 大于65 返回true 当机器人通过行人就自动剪除了？good
+    if (length_temp > 65)
+    {
+      std::cout<<"length_temp is:"<<length_temp<<std::endl;
+      return true;
+    }
+    
+    // return true; //注释掉就能大老远远生成轨迹，否则起点可以直接连接终点就
   }
 
   // 该obs可以直接连接目标obs 且 该obs不是start
@@ -1220,6 +1231,21 @@ bool mapProcess::depthFirst(std::vector<int>& visited, int goal_index, std::vect
   }
 
 
+  if (max_path_explore_number_for_GraphicTEB_!=-1 && res.size()>=max_path_explore_number_for_GraphicTEB_){
+    return false;
+  }
+
+  // edges_graph是一个方阵
+  auto is_father_can_visit = std::vector<bool>(edges_graph_.size(),false);
+  if (is_limitation_){
+    for (int i=0; i<visited.size()-1; i++){
+      for (int j=0; j<edges_graph_.size();j++){
+        if (edges_graph_[visited[i]][j].first.id!= 0)
+          is_father_can_visit[j] = true;
+      }
+    }
+  }
+
   // 当back的adjacent中没有goal时，遍历所有adjacent来继续深搜
   for (int i=0; i<edges_graph_[back].size(); i++){
     // 不可直连
@@ -1239,7 +1265,9 @@ bool mapProcess::depthFirst(std::vector<int>& visited, int goal_index, std::vect
     }
     if (is_in)
       continue;
-    
+    // 存在（祖）父节点可以走过该点
+    if (is_father_can_visit[i] == true)
+      continue;
     // 扩展adjacent obs
     visited.push_back(i);
     if (!depthFirst(visited, goal_index, res))

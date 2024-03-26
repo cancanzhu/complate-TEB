@@ -1573,7 +1573,7 @@ void TebOptimalPlanner::computeCurrentCost(double obst_cost_scale, double viapoi
   // cost_ += 1/cost_obs_dist;//取倒数，从远离行人的地方通过
   
   //区分前面轨迹和后面轨迹，前面轨迹代价大, 行人得有速度
-  //但是如果机器人通过了行人但是没有到达终点，会认为反向轨迹是在行人前面，无法到达终点
+  //但是如果机器人通过了行人但是没有到达终点，会认为反向轨迹是在行人前面，无法到达终点 depthfirst函数修改
   time = 0;
   double cost_distinguish = 0;
   for (int i = 0; i < teb_.sizePoses() - 1; i++)
