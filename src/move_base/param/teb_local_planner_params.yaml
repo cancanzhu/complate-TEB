@@ -67,6 +67,7 @@ TebLocalPlannerROS:
  weight_viapoint: 1
  weight_adapt_factor: 2
  weight_gauss: 2
+ stc_TEB: true
 
  # Homotopy Class Planner
  enable_homotopy_class_planning: True
@@ -77,7 +78,7 @@ TebLocalPlannerROS:
  selection_cost_hysteresis: 1.0
  selection_prefer_initial_plan: 0.9
  selection_obst_cost_scale: 100.0
- selection_alternative_time_cost: False
+ selection_alternative_time_cost: True
  
  roadmap_graph_no_samples: 15
  roadmap_graph_area_width: 5

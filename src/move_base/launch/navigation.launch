@@ -4,6 +4,7 @@
   <!-- translate topic type -->
   <include file="$(find teb_local_planner)/launch/dynamic_obstacle_trans.launch"/>
   <!-- move_base -->
+    <!-- <node pkg="teb_local_planner" type="goalpoint" respawn="false" name="goalpoint" output="screen"/> -->
   <node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen">
     <!-- graphic_teb -->
     <param name="base_local_planner" value="teb_local_planner/TebLocalPlannerROS" />

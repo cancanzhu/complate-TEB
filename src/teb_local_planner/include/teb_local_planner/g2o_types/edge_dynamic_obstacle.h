@@ -103,7 +103,7 @@ public:
     // double obstacle_distance = _measurement->getObstacleFutureDistance(bandpt->pose().position(), t_,shrink_ratio_);
     double BO = 0;
     int lag = 0;
-    int STC_TEB_flag = 1;
+    // int STC_TEB_flag = 1;
   //障碍物半径0.3，机器人半径0.2
 
     // //判断轨迹前面或者后面的方法进行优化
@@ -134,7 +134,7 @@ public:
     // }
 
     // 判断控制点是否在障碍物内部的方法进行优化，得到障碍物前面一系列点
-    if (STC_TEB_flag)
+    if (cfg_->optim.stc_TEB)
     {
       if ((_measurement->getCentroidVelocity()).norm() == 0)
       {

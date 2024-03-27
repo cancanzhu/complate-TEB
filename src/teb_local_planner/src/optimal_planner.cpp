@@ -206,7 +206,7 @@ bool TebOptimalPlanner::optimizeTEB(int iterations_innerloop, int iterations_out
   
   double weight_multiplier = 1.0;
 
-  int STC_TEB_flag = 1;//是否开启逐次优化
+  int STC_TEB_flag = 1;//是否开启逐次优化，写到yaml文件了stc_TEB
 
   // TODO(roesmann): we introduced the non-fast mode with the support of dynamic obstacles
   //                (which leads to better results in terms of x-y-t homotopy planning).
@@ -227,7 +227,7 @@ bool TebOptimalPlanner::optimizeTEB(int iterations_innerloop, int iterations_out
   //根据行人速度调整迭代次数
   int  vel_iterations_outerloop = 0;
   double max_centroid_velocity_ = 0.0;
-  if (STC_TEB_flag)
+  if (cfg_->optim.stc_TEB)
   {
     for (ObstContainer::const_iterator obst = obstacles_->begin(); obst != obstacles_->end(); ++obst)
     {
@@ -277,7 +277,7 @@ bool TebOptimalPlanner::optimizeTEB(int iterations_innerloop, int iterations_out
     //  {
     //   shrink_ratio = 1.0;
     //  }
-    if (STC_TEB_flag)
+    if (cfg_->optim.stc_TEB)
     {
       if (no_optimize == 0)
       {
@@ -1591,11 +1591,11 @@ void TebOptimalPlanner::computeCurrentCost(double obst_cost_scale, double viapoi
     }
   }
   cost_distinguish /= teb_.sizePoses();
-  cost_ += -cost_distinguish*100000;
+  // cost_ += -cost_distinguish*100000;
   
-
   // std::cout<<"cost: "<<cost_<<", "<<cost_gauss<<std::endl;
-  // cost_ += cfg_->optim.weight_gauss *cost_gauss;
+  cost_ += cfg_->optim.weight_gauss *cost_gauss;
+  // std::cout<<"stc_TEB:"<<cfg_->optim.stc_TEB<<std::endl;
   //std::cout<<"cost: "<<cost_<<std::endl;
   // delete temporary created graph
   if (!graph_exist_flag) 
