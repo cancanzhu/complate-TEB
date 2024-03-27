@@ -1,6 +1,6 @@
 <launch>
   <!-- select a mode: how to drive persons. [opt: 0: data replay;  1: social force;  2: manually control with interface keyboard] -->
-  <arg name="person_mode" default="2"/>
+  <arg name="person_mode" default="0"/>
   <!-- select a mode: how to drive the robot. [opt: 0: controlled by move_base, listen to the topic /cmd_vel;  2: manually control with interface keyboard] -->
   <arg name="robot_mode" default="0"/>
   <!-- select a simulation scene, [note: you are suggested to activate the former three scenes with person_mode=1, while the latter two scenes with person_mode=0] -->
@@ -8,12 +8,13 @@
   <!-- <arg name="scene_file" default="$(find pedsim_simulator)/scenes/complex_demo_square.xml"/> -->
   <!-- <arg name="scene_file" default="$(find pedsim_simulator)/scenes/complex_demo_corridor.xml"/> -->
   <!-- <arg name="scene_file" default="$(find pedsim_simulator)/scenes/simple_test_corridor.xml"/>   -->
-  <arg name="scene_file" default="$(find pedsim_simulator)/scenes/simple_test_square.xml"/>   
+  <!-- <arg name="scene_file" default="$(find pedsim_simulator)/scenes/simple_test_square.xml"/>    -->
+  <arg name="scene_file" default="$(find pedsim_simulator)/scenes/simple_test_two.xml"/>   
 
   <!-- set the initial pose of the robot -->
-  <arg name="pose_initial_x" default="-5.0"/>
+  <arg name="pose_initial_x" default="-7.0"/>
   <arg name="pose_initial_y" default="0.0"/>
-  <arg name="pose_initial_theta" default="0.0"/>
+  <arg name="pose_initial_theta" default="1.57"/>
 
   <!-- parameters for simulator -->
   <arg name="default_queue_size" default="10"/>

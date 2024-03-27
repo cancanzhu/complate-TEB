@@ -101,6 +101,7 @@ namespace move_base {
        * @return True if processing of the goal is done, false otherwise
        */
       bool executeCycle(geometry_msgs::PoseStamped& goal, std::vector<geometry_msgs::PoseStamped>& global_plan);
+      
 
     private:
       /**
@@ -168,6 +169,8 @@ namespace move_base {
 
       double distance(const geometry_msgs::PoseStamped& p1, const geometry_msgs::PoseStamped& p2);
 
+      void publishgoal();//zzq
+      
       geometry_msgs::PoseStamped goalToGlobalFrame(const geometry_msgs::PoseStamped& goal_pose_msg);
 
       /**

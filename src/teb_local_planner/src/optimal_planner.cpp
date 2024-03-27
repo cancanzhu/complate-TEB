@@ -279,18 +279,17 @@ bool TebOptimalPlanner::optimizeTEB(int iterations_innerloop, int iterations_out
     //  }
     if (cfg_->optim.stc_TEB)
     {
-      if (no_optimize == 0)
+      if (max_centroid_velocity_ == 0)
+      {
+        shrink_ratio = 1;
+      }
+      else
       {
         shrink_ratio = (double)i / vel_iterations_outerloop;
         // shrink_ratio =pow((((double)i)/vel_iterations_outerloop),0.5);
         // shrink_ratio =4*atan((double)i/vel_iterations_outerloop)/M_PI;
         // shrink_ratio = 1;
         // vel_iterations_outerloop = 4;
-      }
-      if (no_optimize == 1)
-      {
-        shrink_ratio = 1;
-        vel_iterations_outerloop = 4;
       }
     }
     else
@@ -1494,6 +1493,7 @@ void TebOptimalPlanner::computeCurrentCost(double obst_cost_scale, double viapoi
     //执行，计算了时间
     // sleep(10);
     cost_ += teb_.getSumOfAllTimeDiffs();
+    // cost_ += cfg_->optim.weight_time*teb_.getSumOfAllTimeDiffs();
     cost_origin_ += teb_.getSumOfAllTimeDiffs();
     // TEST we use SumOfAllTimeDiffs() here, because edge cost depends on number of samples, which is not always the same for similar TEBs,
     // since we are using an AutoResize Function with hysteresis.
@@ -1551,6 +1551,7 @@ void TebOptimalPlanner::computeCurrentCost(double obst_cost_scale, double viapoi
   }
   cost_yaw /= teb_.sizePoses();
   // cost_ += cost_yaw;
+  // cost_ += cfg_->optim.weight_yaw*cost_yaw;
 
   // 累计到障碍物的距离
   time = 0;
@@ -1571,6 +1572,7 @@ void TebOptimalPlanner::computeCurrentCost(double obst_cost_scale, double viapoi
   }
   cost_obs_dist /= teb_.sizePoses();//路径长度不一致因此需要归一化处理
   // cost_ += 1/cost_obs_dist;//取倒数，从远离行人的地方通过
+  // cost_ += cfg_->optim.weight_dist*(1/cost_obs_dist);
   
   //区分前面轨迹和后面轨迹，前面轨迹代价大, 行人得有速度
   //但是如果机器人通过了行人但是没有到达终点，会认为反向轨迹是在行人前面，无法到达终点 depthfirst函数修改
@@ -1591,7 +1593,8 @@ void TebOptimalPlanner::computeCurrentCost(double obst_cost_scale, double viapoi
     }
   }
   cost_distinguish /= teb_.sizePoses();
-  // cost_ += -cost_distinguish*100000;
+  // cost_ += -cost_distinguish*4;
+  cost_ += -cost_distinguish*cfg_->optim.weight_distinguish;
   
   // std::cout<<"cost: "<<cost_<<", "<<cost_gauss<<std::endl;
   cost_ += cfg_->optim.weight_gauss *cost_gauss;

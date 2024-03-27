@@ -176,6 +176,48 @@ namespace move_base {
     dsrv_ = new dynamic_reconfigure::Server<move_base::MoveBaseConfig>(ros::NodeHandle("~"));
     dynamic_reconfigure::Server<move_base::MoveBaseConfig>::CallbackType cb = boost::bind(&MoveBase::reconfigureCB, this, _1, _2);
     dsrv_->setCallback(cb);
+    publishgoal();
+  }
+
+//zzq
+  void MoveBase::publishgoal()
+  {
+    // 发布目标点
+    // 创建ROS节点句柄
+    ros::NodeHandle nh_pub("~");
+
+    // 创建一个用于发布导航目标点的Publisher
+    ros::Publisher goal_pub = nh_pub.advertise<geometry_msgs::PoseStamped>("/move_base_simple/goal", 10);
+
+    // 创建一个导航目标点消息
+    geometry_msgs::PoseStamped goal_msg;
+
+    // 设置导航目标点的时间戳
+    goal_msg.header.stamp = ros::Time::now();
+
+    // 设置导航目标点的参考坐标系
+    goal_msg.header.frame_id = "odom";
+
+    // 设置导航目标点的坐标（假设为(1.0, 2.0, 0.0)）
+    goal_msg.pose.position.x = -7;
+    goal_msg.pose.position.y = 5;
+    goal_msg.pose.position.z = 0.0;
+    // // 设置导航目标点的方向（与机器人当前朝向相同）
+    // goal_msg.pose.orientation.w = 1; // cos(0)
+    // goal_msg.pose.orientation.x = 0.0;
+    // goal_msg.pose.orientation.y = 0.0;
+    // goal_msg.pose.orientation.z = 0; 
+    // 设置导航目标点的方向（机器人原来方向逆时针旋转90度）
+    goal_msg.pose.orientation.w = 0.7071; // cos(π/4)
+    goal_msg.pose.orientation.x = 0.0;
+    goal_msg.pose.orientation.y = 0.0;
+    goal_msg.pose.orientation.z = 0.7071; // sin(π/4)
+
+    // 发布导航目标点消息
+    goal_pub.publish(goal_msg);
+
+    // 等待一段时间以确保消息被发送
+    ros::Duration(1.0).sleep();
   }
 
   void MoveBase::reconfigureCB(move_base::MoveBaseConfig &config, uint32_t level){

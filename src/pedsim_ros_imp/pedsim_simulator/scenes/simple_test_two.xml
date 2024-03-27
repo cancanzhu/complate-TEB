@@ -20,4 +20,8 @@
         <addwaypoint id="middle2"/>
         <addwaypoint id="target"/>
     </agent>
+    <agent x="-5" y="2" n="1" dx="0" dy="0" type="1">
+        <addwaypoint id="middle1"/>
+        <addwaypoint id="target"/>
+    </agent>
 </scenario>

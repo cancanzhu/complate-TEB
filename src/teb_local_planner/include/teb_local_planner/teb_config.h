@@ -171,6 +171,9 @@ public:
 
     double weight_adapt_factor; //!< Some special weights (currently 'weight_obstacle') are repeatedly scaled by this factor in each outer TEB iteration (weight_new = weight_old*factor); Increasing weights iteratively instead of setting a huge value a-priori leads to better numerical conditions of the underlying optimization problem.
     double weight_gauss; //!<weight for gauss map>
+    double weight_yaw; //!<weight for yaw map>
+    double weight_dist; //!<weight for obs_dist map>
+    double weight_distinguish; //!<weight for distinguish map>
     bool stc_TEB;
     double obstacle_cost_exponent; //!< Exponent for nonlinear obstacle cost (cost = linear_cost * obstacle_cost_exponent). Set to 1 to disable nonlinear cost (default)
   } optim; //!< Optimization related parameters
@@ -342,6 +345,9 @@ public:
 
     optim.weight_adapt_factor = 2.0;
     optim.weight_gauss = 2.0;
+    optim.weight_yaw = 2.0;
+    optim.weight_dist = 2.0;
+    optim.weight_distinguish= 4.0;
     optim.stc_TEB = false;
     optim.obstacle_cost_exponent = 1.0;
 

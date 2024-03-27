@@ -47,7 +47,7 @@ Visualization Manager:
           Marker Topic: /pedsim_visualizer/walls
           Name: Walls
           Namespaces:
-            {}
+            "": true
           Queue Size: 0
           Value: true
         - Alpha: 1
@@ -287,7 +287,8 @@ Visualization Manager:
       Marker Topic: /move_base/TebLocalPlannerROS/teb_markers
       Name: TEBmarkers
       Namespaces:
-        {}
+        CircularObstacles: true
+        TebContainer: true
       Queue Size: 100
       Value: true
     - Class: rviz/Group
@@ -348,7 +349,7 @@ Visualization Manager:
       Axes Radius: 0.009999999776482582
       Class: rviz/PoseArray
       Color: 173; 127; 168
-      Enabled: true
+      Enabled: false
       Head Length: 0.07000000029802322
       Head Radius: 0.029999999329447746
       Name: PoseArray
@@ -357,7 +358,7 @@ Visualization Manager:
       Shape: Arrow (Flat)
       Topic: /teb_shrink_poses
       Unreliable: false
-      Value: true
+      Value: false
     - Alpha: 1
       Arrow Length: 0.30000001192092896
       Axes Length: 0.30000001192092896
@@ -417,10 +418,10 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.8797970414161682
+      Pitch: 0.8547970652580261
       Target Frame: <Fixed Frame>
       Value: XYOrbit (rviz)
-      Yaw: 4.4461541175842285
+      Yaw: 4.646158695220947
     Saved: ~
 Window Geometry:
   Displays:
@@ -438,5 +439,5 @@ Window Geometry:
   Views:
     collapsed: false
   Width: 1853
-  X: 3213
-  Y: 221
+  X: 707
+  Y: 191

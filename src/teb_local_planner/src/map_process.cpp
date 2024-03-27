@@ -1180,14 +1180,14 @@ bool mapProcess::depthFirst(std::vector<int>& visited, int goal_index, std::vect
       res.push_back(path_temp);
     }
 
-    //zzq
-    //判断长度，轨迹过长就剪除
-    // 大于65 返回true 当机器人通过行人就自动剪除了？good
-    if (length_temp > 65)
-    {
-      std::cout<<"length_temp is:"<<length_temp<<std::endl;
-      return true;
-    }
+    // //zzq
+    // //判断长度，轨迹过长就剪除
+    // // 大于65 返回true 当机器人通过行人就自动剪除了？good
+    // if (length_temp > 65)
+    // {
+    //   std::cout<<"length_temp is:"<<length_temp<<std::endl;
+    //   return true;
+    // }
     
     // return true; //注释掉就能大老远远生成轨迹，否则起点可以直接连接终点就
   }
